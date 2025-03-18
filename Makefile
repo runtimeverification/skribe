@@ -19,6 +19,13 @@ build:
 poetry-install:
 	$(POETRY) install
 
+# Semantics
+
+kdist-build: poetry-install
+	$(POETRY) run kdist -v build -j2 stylus-semantics.*
+
+kdist-clean: poetry-install
+	$(POETRY) run kdist clean
 
 # Tests
 
