@@ -1,7 +1,15 @@
+name: 'Test'
+on:
+  pull_request:
+  workflow_dispatch:
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
   version-bump:
     name: 'Version Bump'
     runs-on: [self-hosted, linux, flyweight]
-    steps:
     steps:
       - name: 'Check out code'
         uses: actions/checkout@v4
