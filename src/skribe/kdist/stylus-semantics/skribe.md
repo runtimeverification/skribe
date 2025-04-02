@@ -78,6 +78,7 @@ module SKRIBE
          ~> resetCallstate
          ~> newWasmInstance(TO, CODE)
          ~> mkCall( FROM, TO, #quoteUnparseWasmString("user_entrypoint"), DATA, VALUE )
+         // TODO handle the call result
          ~> #endWasm
             ...
         </k>
