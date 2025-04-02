@@ -10,12 +10,17 @@ authors = [
     "Runtime Verification, Inc. <contact@runtimeverification.com>",
 ]
 
+[tool.poetry.scripts]
+skribe-simulation = "skribe.simulation:main"
+
 [tool.poetry.plugins.kdist]
 stylus-semantics = "skribe.kdist.plugin"
 
 [tool.poetry.dependencies]
 python = "^3.10"
 pykwasm = { git = "https://github.com/runtimeverification/wasm-semantics.git", tag = "v0.1.123", subdirectory = "pykwasm" }
+eth-abi = "^5.2.0"
+pycryptodome = "^3.22.0"
 
 [tool.poetry.group.dev.dependencies]
 autoflake = "*"

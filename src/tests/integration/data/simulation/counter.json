@@ -1,0 +1,27 @@
+{
+  "steps": [
+      {
+          "type": "setExitCode",
+          "value": 1
+      },
+      {
+          "type": "setStylusContract",
+          "id": 1,
+          "code": "counter.wasm"
+      },
+      {
+          "type": "callStylus",
+          "to": 1,
+          "data": {
+              "function": "number",
+              "types": [],
+              "args": []
+          },
+          "value": 0
+      },
+      {
+          "type": "setExitCode",
+          "value": 0
+      }
+  ]
+}
