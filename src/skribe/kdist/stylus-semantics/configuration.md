@@ -21,17 +21,49 @@ module CONFIGURATION
           <contractModIdx> .Int </contractModIdx>
         </stylus-callState>
 
+        <stylus-output> .Bytes </stylus-output>
+
         <stylus-contracts>
           <stylus-contract multiplicity="*" type="Map">
-            <stylus-contract-id>   0:Int          </stylus-contract-id>
-            <stylus-contract-code> #emptyModule() </stylus-contract-code>
+            <stylus-contract-id>      0              </stylus-contract-id>
+            <stylus-contract-code>    #emptyModule() </stylus-contract-code>
+            <stylus-contract-storage> .Map           </stylus-contract-storage>
           </stylus-contract>
         </stylus-contracts>
 
+        <stylusStack> .StylusStack </stylusStack>
         <callStack> .List </callStack>
         <interimStates> .List </interimStates>
 
       </stylus>
+
+    syntax StylusStack ::= List{StylusStackVal, ":"}  [symbol(stylusStackList)]
+    syntax StylusStackVal ::= Bytes | Int
+
+```
+# Stack operations
+
+```k
+    syntax InternalCmd ::= pushStack(StylusStackVal)    [symbol(pushStack)]
+ // ---------------------------------------------------------------------
+    rule [pushStack]:
+        <k> pushStack(V) => .K ... </k>
+        <stylusStack> S => V : S </stylusStack>
+
+    syntax InternalCmd ::= "dropStack"    [symbol(dropStack)]
+ // ---------------------------------------------------------------------
+    rule [dropStack]:
+        <k> dropStack => .K ... </k>
+        <stylusStack> _V : S => S </stylusStack>
+
+    // Allows using `pushStack` and `dropStack` in the `<instrs>` cell
+    rule [pushStack-instr]:
+        <instrs> pushStack(V) => .K ... </instrs>
+        <stylusStack> S => V : S </stylusStack>
+
+    rule [dropStack-instr]:
+        <instrs> dropStack => .K ... </instrs>
+        <stylusStack> _V : S => S </stylusStack>
 
 ```
 

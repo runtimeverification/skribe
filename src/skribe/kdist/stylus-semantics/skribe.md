@@ -11,11 +11,12 @@ module SKRIBE-SYNTAX-COMMON
     imports INT-SYNTAX
     imports STYLUS-DATA
     imports BYTES-SYNTAX
+    imports MAP
 
     syntax ModuleDecl
 
     syntax Step ::= setExitCode(Int)                                                             [symbol(setExitCode)]
-                  | setStylusContract(id: Int, code: ModuleDecl)                                 [symbol(setStylusContract)]
+                  | setStylusContract(id: Int, code: ModuleDecl, storage: Map)                   [symbol(setStylusContract)]
                   | callStylus( from: Account, to: Account, callData: Bytes, callValue: Int)     [symbol(callStylus)]
 
     syntax Steps ::= List{Step, ""}                    [symbol(skribeSteps)]
@@ -52,20 +53,22 @@ module SKRIBE
         <instrs> .K </instrs>
 
     rule [setStylusContract-existing]:
-        <k> setStylusContract(ID, CODE) => .K ... </k>
+        <k> setStylusContract(ID, CODE, STORAGE) => .K ... </k>
         <stylus-contract>
-           <stylus-contract-id> ID          </stylus-contract-id>
-           <stylus-contract-code> _ => CODE </stylus-contract-code>
+           <stylus-contract-id>      ID           </stylus-contract-id>
+           <stylus-contract-code>    _ => CODE    </stylus-contract-code>
+           <stylus-contract-storage> _ => STORAGE </stylus-contract-storage>
            ...
         </stylus-contract>
       [priority(50)]
 
     rule [setStylusContract-new]:
-        <k> setStylusContract(ADDR, CODE) => .K ... </k>
+        <k> setStylusContract(ADDR, CODE, STORAGE) => .K ... </k>
         ( .Bag =>
           <stylus-contract>
-            <stylus-contract-id>   ADDR </stylus-contract-id>
-            <stylus-contract-code> CODE </stylus-contract-code>
+            <stylus-contract-id>      ADDR    </stylus-contract-id>
+            <stylus-contract-code>    CODE    </stylus-contract-code>
+            <stylus-contract-storage> STORAGE </stylus-contract-storage>
           </stylus-contract>
         )
       [priority(55)]
