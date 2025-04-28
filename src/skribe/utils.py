@@ -1,10 +1,8 @@
 from __future__ import annotations
 
 from functools import cached_property
-from pathlib import Path
 from typing import TYPE_CHECKING
 
-from pyk.kast.inner import KInner
 from pyk.kast.outer import read_kast_definition
 from pyk.kdist import kdist
 from pyk.konvert import kast_to_kore

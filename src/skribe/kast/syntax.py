@@ -1,8 +1,9 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Mapping
 
 from pyk.kast.inner import KApply, build_cons
+from pyk.prelude.collections import map_of
 from pyk.prelude.utils import token
 
 if TYPE_CHECKING:
@@ -22,8 +23,12 @@ def set_exit_code(i: int) -> KInner:
     return KApply('setExitCode', [token(i)])
 
 
-def set_stylus_contract(id: int, code: KInner) -> KInner:
-    return KApply('setStylusContract', [token(id), code])
+def set_stylus_contract(id: int, code: KInner, storage: Mapping[int, int]) -> KInner:
+    # TODO fix type error
+    #       Argument 1 to "map_of" has incompatible type "dict[KToken, KToken]";
+    #       expected "dict[KInner, KInner] | Iterable[tuple[KInner, KInner]]"  [arg-type]
+    storage_kast = map_of({token(k): token(v) for k, v in storage.items()})  # type: ignore
+    return KApply('setStylusContract', [token(id), code, storage_kast])
 
 
 def account(id: int | None) -> KInner:
@@ -31,5 +36,8 @@ def account(id: int | None) -> KInner:
 
 
 def call_stylus(from_account: int | None, to_account: int | None, data: bytes, value: int) -> KInner:
-
     return KApply('callStylus', [account(from_account), account(to_account), token(data), token(value)])
+
+
+def check_output(bs: bytes) -> KInner:
+    return KApply('checkOutput', [token(bs)])

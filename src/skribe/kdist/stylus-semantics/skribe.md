@@ -18,7 +18,7 @@ module SKRIBE-SYNTAX-COMMON
     syntax Step ::= setExitCode(Int)                                                             [symbol(setExitCode)]
                   | setStylusContract(id: Int, code: ModuleDecl, storage: Map)                   [symbol(setStylusContract)]
                   | callStylus( from: Account, to: Account, callData: Bytes, callValue: Int)     [symbol(callStylus)]
-
+                  | checkOutput( data: Bytes )                                                   [symbol(checkOutput)]
     syntax Steps ::= List{Step, ""}                    [symbol(skribeSteps)]
 
 endmodule
@@ -81,7 +81,6 @@ module SKRIBE
          ~> resetCallstate
          ~> newWasmInstance(TO, CODE)
          ~> mkCall( FROM, TO, #quoteUnparseWasmString("user_entrypoint"), DATA, VALUE )
-         // TODO handle the call result
          ~> #endWasm
             ...
         </k>
@@ -146,5 +145,10 @@ module SKRIBE
         requires isListIndex(FUNCIDX, FUNCADDRS)
       [priority(60)]
 
+
+    rule [checkOutput]:
+        <k> checkOutput(EXPECTED) => .K ... </k>
+        <stylus-output> EXPECTED </stylus-output>
+ 
 endmodule
 ```

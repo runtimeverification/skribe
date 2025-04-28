@@ -44,15 +44,15 @@ module SWITCH
     //     <hostStack> (Error(_,_) #as ERR) : _ => ERR : .HostStack </hostStack>
     //   [priority(40)]
 
-    // rule [endWasm]:
-    //     <k> #endWasm 
-    //      => popCallState
-    //      ~> dropWorldState
-    //      ~> #callResult(STACK, RELS)
-    //         ...
-    //     </k>
-    //     <instrs> .K </instrs>
-    //   [priority(50)]
+    rule [endWasm]:
+        <k> #endWasm 
+         => popCallState
+         ~> dropWorldState
+            ...
+        </k>
+        <instrs> .K </instrs>
+        <valstack> < i32 > 0 : .ValStack </valstack>
+      [priority(50)]
 
     // rule [endWasm-trap]:
     //     <k> #endWasm ... </k>
