@@ -13,9 +13,81 @@
           "type": "callStylus",
           "to": 1,
           "data": {
-              "function": "number",
-              "types": [],
-              "args": []
+              "function": "increment", "types": [], "args": []
+          },
+          "value": 0
+      },
+      {
+          "type": "callStylus",
+          "to": 1,
+          "data": {
+              "function": "number", "types": [], "args": []
+          },
+          "output": {
+              "type": "uint256",
+              "value": 1
+          },
+          "value": 0
+      },
+      {
+          "type": "callStylus",
+          "to": 1,
+          "data": {
+              "function": "increment", "types": [], "args": []
+          },
+          "value": 0
+      },
+      {
+          "type": "callStylus",
+          "to": 1,
+          "data": {
+              "function": "number", "types": [], "args": []
+          },
+          "output": {
+              "type": "uint256",
+              "value": 2
+          },
+          "value": 0
+      },
+      {
+          "type": "callStylus",
+          "to": 1,
+          "data": {
+              "function": "setNumber",
+              "types": ["uint256"],
+              "args": [123]
+          },
+          "value": 0
+      },
+      {
+          "type": "callStylus",
+          "to": 1,
+          "data": {
+              "function": "number", "types": [], "args": []
+          },
+          "output": {
+              "type": "uint256",
+              "value": 123
+          },
+          "value": 0
+      },
+      {
+          "type": "callStylus",
+          "to": 1,
+          "data": {
+              "function": "addFromMsgValue", "types": [], "args": []
+          },
+          "value": 100
+      },
+      {
+          "type": "callStylus",
+          "to": 1,
+          "data": {
+              "function": "number", "types": [], "args": []
+          },
+          "output": {
+              "type": "uint256",
+              "value": 223
           },
           "value": 0
       },
