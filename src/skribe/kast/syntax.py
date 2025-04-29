@@ -1,13 +1,13 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Mapping
+from typing import TYPE_CHECKING
 
 from pyk.kast.inner import KApply, build_cons
 from pyk.prelude.collections import map_of
 from pyk.prelude.utils import token
 
 if TYPE_CHECKING:
-    from collections.abc import Iterable
+    from collections.abc import Iterable, Mapping
 
     from pyk.kast.inner import KInner
 

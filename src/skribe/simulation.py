@@ -19,8 +19,9 @@ from skribe.kast.syntax import call_stylus, check_output, set_exit_code, set_sty
 from .utils import concrete_definition, load_wasm
 
 if TYPE_CHECKING:
+    from collections.abc import Iterable
     from subprocess import CompletedProcess
-    from typing import Any, Iterable
+    from typing import Any
 
     from pyk.kast.inner import KInner
 
