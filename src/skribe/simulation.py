@@ -117,15 +117,27 @@ def main() -> None:
 
 
 def _argument_parser() -> ArgumentParser:
-    parser = ArgumentParser(prog='komet')
+    parser = ArgumentParser(
+        prog='skribe-simulation',
+        description='A CLI tool for simulating Stylus smart contract executions using formal semantics.',
+    )
     command_parser = parser.add_subparsers(dest='command', required=True)
 
     run_parser = command_parser.add_parser('run', help='run a concrete test')
-    run_parser.add_argument('program', metavar='PROGRAM', type=file_path, help='path to test file')
     run_parser.add_argument(
-        '--output', metavar='FORMAT', type=KAstOutput, default=KAstOutput.KORE, help='format to output the term in'
+        'program',
+        metavar='PROGRAM',
+        type=file_path,
+        help='Path to a JSON file describing the test case as a sequence of simulation steps',
     )
-    run_parser.add_argument('--depth', type=int, help='number of steps to run the simulation')
+    run_parser.add_argument(
+        '--output',
+        metavar='FORMAT',
+        type=KAstOutput,
+        default=KAstOutput.KORE,
+        help='Output format for the final state (default: kore)',
+    )
+    run_parser.add_argument('--depth', type=int, help='Maximum number of execution (K) steps to simulate')
 
     return parser
 
