@@ -1,3 +1,6 @@
+;; NOTE: The Wasm module(s) in this file is for testing Stylus host functions in isolation.
+;; The module does not implement the EVM ABI and is not intended for deployment.
+
 setExitCode(1)
 
 setStylusContract(

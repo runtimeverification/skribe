@@ -1,3 +1,6 @@
+;; NOTE: The Wasm module(s) in this file is for testing Stylus host functions in isolation.
+;; The module does not implement the EVM ABI and is not intended for deployment.
+
 setExitCode(1)
 
 setStylusContract(
@@ -9,24 +12,29 @@ setStylusContract(
     (import "vm_hooks" "write_result"          (func $write_result         (param i32 i32)))
 
     (func (export "user_entrypoint") (param $args_len i32) (result i32)
-        ;; this func uses $args_len to select which func to call
-        (call $read_args (i32.const 0))
+      ;; Behavior is selected based on the length of the input argument:
+      ;; - If $args_len == 32: treat input as a 32-byte storage key and read from storage.
+      ;; - If $args_len == 64: treat input as a key-value pair (32 bytes key, 32 bytes value),
+      ;;   and write the value to the given key in the storage.
 
-        (i32.eq (local.get $args_len) (i32.const 32)) 
-        (if (then 
-          (call $storage_load_bytes32 (i32.const 0) (i32.const 32))
-          (call $write_result (i32.const 32) (i32.const 32))
-          (i32.const 0)
-          (return)
-        ))
-        
-        (i32.eq (local.get $args_len) (i32.const 64))
-        (if (then 
-          (call $storage_cache_bytes32 (i32.const 0) (i32.const 32))
-          (i32.const 0)
-          (return)
-        ))
+      (call $read_args (i32.const 0)) ;; Load the argument into memory starting at offset 0
 
+      ;; Handle 32-byte input: storage read
+      (i32.eq (local.get $args_len) (i32.const 32)) 
+      (if (then 
+        (call $storage_load_bytes32 (i32.const 0) (i32.const 32)) ;; Read value from storage at key [0..32]
+        (call $write_result (i32.const 32) (i32.const 32))        ;; Write the result to memory [32..64]
+        (i32.const 0)
+        (return)
+      ))
+
+      ;; Handle 64-byte input: storage write
+      (i32.eq (local.get $args_len) (i32.const 64))
+      (if (then 
+        (call $storage_cache_bytes32 (i32.const 0) (i32.const 32)) ;; Write value [32..64] to key [0..32]
+        (i32.const 0)
+        (return)
+      ))
     )
     (memory (export "memory") 1 1)
   ),
