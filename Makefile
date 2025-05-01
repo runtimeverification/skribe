@@ -97,3 +97,19 @@ SRC_FILES := $(shell find src -type f -name '*.py')
 
 pyupgrade: poetry-install
 	$(POETRY_RUN) pyupgrade --py310-plus $(SRC_FILES)
+
+
+# Build test contracts
+
+test_contracts_dir = src/tests/integration/data/contracts
+target_subdir = target/wasm32-unknown-unknown
+
+hello_world_contract = $(test_contracts_dir)/stylus-hello-world
+hello_world_wasm = $(hello_world_contract)/$(target_subdir)/stylus_hello_world.wasm
+
+$(hello_world_wasm):
+		cargo build --manifest-path $(hello_world_contract)/Cargo.toml --release --lib --target wasm32-unknown-unknown
+
+test_wasms = $(hello_world_wasm)
+
+test-contracts: $(test_wasms)
