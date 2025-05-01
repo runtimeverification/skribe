@@ -57,4 +57,10 @@ checkOutput(Int2Bytes(32, 300, BE))
 callStylus(0, 1, Int2Bytes(32, 4, BE), 0)
 checkOutput(Int2Bytes(32, 400, BE))
 
+;; update existing key
+callStylus(0, 1, Int2Bytes(32, 3, BE) +Bytes Int2Bytes(32, 987654321, BE), 0)
+
+callStylus(0, 1, Int2Bytes(32, 3, BE), 0)
+checkOutput(Int2Bytes(32, 987654321, BE))
+
 setExitCode(0)
