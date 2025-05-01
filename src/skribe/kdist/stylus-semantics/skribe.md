@@ -4,13 +4,14 @@ requires "stylus.md"
 
 module SKRIBE-SYNTAX
   imports WASM-TEXT-SYNTAX
+  imports WASM-TEXT-COMMON-SYNTAX
   imports SKRIBE-SYNTAX-COMMON
 endmodule
 
 module SKRIBE-SYNTAX-COMMON
     imports INT-SYNTAX
     imports STYLUS-DATA
-    imports BYTES-SYNTAX
+    imports BYTES
     imports MAP
 
     syntax ModuleDecl
@@ -84,6 +85,7 @@ module SKRIBE
          ~> #endWasm
             ...
         </k>
+        <stylus-output> _ => .Bytes </stylus-output>
         <stylus-contract>
           <stylus-contract-id> TO </stylus-contract-id>
           <stylus-contract-code> CODE </stylus-contract-code>

@@ -12,6 +12,9 @@ module CONFIGURATION
     configuration 
       <stylus>
         <k> .K </k>
+        <stylusStack> .StylusStack </stylusStack>
+        <stylus-output> .Bytes </stylus-output>
+
         <stylus-callState>
           <stylus-caller>    .Account </stylus-caller>
           <stylus-callee>    .Account </stylus-callee>
@@ -21,7 +24,6 @@ module CONFIGURATION
           <contractModIdx> .Int </contractModIdx>
         </stylus-callState>
 
-        <stylus-output> .Bytes </stylus-output>
 
         <stylus-contracts>
           <stylus-contract multiplicity="*" type="Map">
@@ -31,7 +33,6 @@ module CONFIGURATION
           </stylus-contract>
         </stylus-contracts>
 
-        <stylusStack> .StylusStack </stylusStack>
         <callStack> .List </callStack>
         <interimStates> .List </interimStates>
 
