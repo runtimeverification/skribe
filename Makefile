@@ -39,7 +39,7 @@ test-all: poetry-install
 test-unit: poetry-install
 	$(POETRY_RUN) pytest src/tests/unit --maxfail=1 --verbose $(TEST_ARGS)
 
-test-integration: poetry-install
+test-integration: poetry-install test-contracts
 	$(POETRY_RUN) pytest src/tests/integration --maxfail=1 --verbose --durations=0 --numprocesses=4 --dist=worksteal $(TEST_ARGS)
 
 
