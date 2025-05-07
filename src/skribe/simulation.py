@@ -5,7 +5,7 @@ import sys
 from argparse import ArgumentParser
 from pathlib import Path
 from tempfile import NamedTemporaryFile
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Callable
 
 from eth_abi import encode
 from eth_utils import function_signature_to_4byte_selector
@@ -34,6 +34,10 @@ def call_data(function: str, types: Iterable[str], args: Iterable[Any]) -> bytes
     encoded_args = encode(types=types, args=args)
 
     return selector + encoded_args
+
+
+def call_data_encoder(function: str, types: Iterable[str]) -> Callable[[Iterable[any]], bytes]:
+    return lambda args: call_data(function, types)
 
 
 def call_data_from_dict(d: dict[str, Any]) -> bytes:
