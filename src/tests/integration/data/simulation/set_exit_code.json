@@ -1,0 +1,12 @@
+{
+    "steps": [
+        {
+            "type": "setExitCode",
+            "value": 1
+        },
+        {
+            "type": "setExitCode",
+            "value": 0
+        }
+    ]
+}

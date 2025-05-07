@@ -39,7 +39,7 @@ test-all: poetry-install
 test-unit: poetry-install
 	$(POETRY_RUN) pytest src/tests/unit --maxfail=1 --verbose $(TEST_ARGS)
 
-test-integration: poetry-install
+test-integration: poetry-install test-contracts
 	$(POETRY_RUN) pytest src/tests/integration --maxfail=1 --verbose --durations=0 --numprocesses=4 --dist=worksteal $(TEST_ARGS)
 
 
@@ -97,3 +97,19 @@ SRC_FILES := $(shell find src -type f -name '*.py')
 
 pyupgrade: poetry-install
 	$(POETRY_RUN) pyupgrade --py310-plus $(SRC_FILES)
+
+
+# Build test contracts
+
+test_contracts_dir = src/tests/integration/data/contracts
+target_subdir = target/wasm32-unknown-unknown
+
+hello_world_contract = $(test_contracts_dir)/stylus-hello-world
+hello_world_wasm = $(hello_world_contract)/$(target_subdir)/stylus_hello_world.wasm
+
+$(hello_world_wasm):
+		cargo build --manifest-path $(hello_world_contract)/Cargo.toml --release --lib --target wasm32-unknown-unknown
+
+test_wasms = $(hello_world_wasm)
+
+test-contracts: $(test_wasms)
