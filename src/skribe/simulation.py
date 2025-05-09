@@ -36,8 +36,8 @@ def call_data(function: str, types: Iterable[str], args: Iterable[Any]) -> bytes
     return selector + encoded_args
 
 
-def call_data_encoder(function: str, types: Iterable[str]) -> Callable[[Iterable[any]], bytes]:
-    return lambda args: call_data(function, types)
+def call_data_encoder(function: str, types: Iterable[str]) -> Callable[[Iterable[Any]], bytes]:
+    return lambda args: call_data(function, types, args)
 
 
 def call_data_from_dict(d: dict[str, Any]) -> bytes:

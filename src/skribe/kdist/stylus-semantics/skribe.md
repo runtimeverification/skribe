@@ -33,6 +33,7 @@ module SKRIBE
       <skribe>
         <program> $PGM:Steps </program>
         <stylus/>
+        <wasmStore> .Map </wasmStore> // file path -> wasm module AST
         <exitCode exit=""> 1 </exitCode>
       </skribe>
 
