@@ -11,6 +11,7 @@ authors = [
 ]
 
 [tool.poetry.scripts]
+skribe = "skribe.__main__:main"
 skribe-simulation = "skribe.simulation:main"
 
 [tool.poetry.plugins.kdist]
