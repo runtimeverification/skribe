@@ -6,6 +6,9 @@ from pathlib import Path
 
 from pyk.cli.utils import ensure_dir_path
 
+from .skribe import Skribe
+from .utils import concrete_definition
+
 
 def _exec_build(dir_path: Path | None) -> None:
     """
@@ -21,6 +24,9 @@ def _exec_build(dir_path: Path | None) -> None:
         None
     """
     dir_path = Path.cwd() if dir_path is None else dir_path
+
+    skribe = Skribe(concrete_definition)
+    skribe.build_stylus_contract(contract_dir=dir_path)
 
     exit(0)
 
