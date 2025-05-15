@@ -60,7 +60,7 @@ module SWITCH
 
 ```
 
-- `#waitWasm` is used after the `newWasmInstance` command to wait for the
+- `#waitWasm` is used after the `#newWasmInstance` command to wait for the
   completion of the Wasm module initialization. Unlike #endWasm, it doesn't manipulate the VM output
   or call stack; it simply waits for the VM to finish its execution.
 

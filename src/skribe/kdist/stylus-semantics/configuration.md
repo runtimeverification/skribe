@@ -20,6 +20,7 @@ module CONFIGURATION
           <stylus-callee>    .Account </stylus-callee>
           <stylus-callData>  .Bytes   </stylus-callData>
           <stylus-callValue> 0        </stylus-callValue>
+          <stylus-static> false </stylus-static>
           <wasm/>
           <contractModIdx> .Int </contractModIdx>
         </stylus-callState>

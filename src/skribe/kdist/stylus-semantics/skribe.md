@@ -80,7 +80,7 @@ module SKRIBE
          => pushWorldState
          ~> pushCallState
          ~> resetCallstate
-         ~> newWasmInstance(TO, CODE)
+         ~> #newWasmInstance(TO, CODE)
          ~> mkCall( FROM, TO, #quoteUnparseWasmString("user_entrypoint"), DATA, VALUE )
          ~> #endWasm
             ...
@@ -92,61 +92,6 @@ module SKRIBE
           ...
         </stylus-contract>
         <instrs> .K </instrs>
-
-    syntax InternalCmd ::= newWasmInstance   (contract: Account, code: ModuleDecl)     [symbol(newWasmInstance)]
- // ------------------------------------------------------------------------------------------------------------
-    rule [newWasmInstance]:
-        <k> newWasmInstance(_CONTRACT, CODE) => #waitWasm ~> setContractModIdx ... </k>
-        ( _:WasmCell => <wasm>
-          <instrs> initContractModule(CODE) </instrs>
-          ...
-        </wasm>)
-
-    syntax K ::= initContractModule(ModuleDecl)   [function]
- // ------------------------------------------------------------------------
-    rule initContractModule((module _:OptionalId _:Defns):ModuleDecl #as M)
-      => sequenceStmts(text2abstract(M .Stmts))
-
-    rule initContractModule(M:ModuleDecl) => M              [owise]
-
-    syntax InternalCmd ::= "setContractModIdx"
- // ------------------------------------------------------
-    rule [setContractModIdx]:
-        <k> setContractModIdx => .K ... </k>
-        <contractModIdx> _ => NEXTIDX -Int 1 </contractModIdx>
-        <nextModuleIdx> NEXTIDX </nextModuleIdx>
-        <instrs> .K </instrs>
-
-    syntax WasmStringToken ::= #unparseWasmString ( String )         [function, total, hook(STRING.string2token)]
-                             | #quoteUnparseWasmString ( String )   [function, total]
-    rule #quoteUnparseWasmString(S) => #unparseWasmString("\"" +String S +String "\"")
-
-    syntax InternalCmd ::= mkCall( from: Account, to: Account, function: WasmString, data: Bytes, value: Int )  [symbol(mkCall)]
- // --------------------------------------------------------------------------------------------------
-    rule [mkCall]:
-        <k> mkCall(FROM, TO, FUNCNAME, DATA, VALUE) => .K ... </k>
-        <stylus-callState>
-          <stylus-caller>    _ => FROM   </stylus-caller>
-          <stylus-callee>    _ => TO     </stylus-callee>
-          <stylus-callData>  _ => DATA   </stylus-callData>
-          <stylus-callValue> _ => VALUE  </stylus-callValue>
-          <wasm>
-            <instrs> .K => (invoke (FUNCADDRS {{ FUNCIDX }} orDefault -1 )) </instrs>
-            <valstack> _ => <i32> lengthBytes(DATA) : .ValStack </valstack>
-            <moduleInst>
-              <modIdx> MODIDX </modIdx>
-              <exports> ... FUNCNAME |-> FUNCIDX:Int ... </exports>
-              <funcAddrs> FUNCADDRS </funcAddrs>
-              ...
-            </moduleInst>
-            ...
-          </wasm>
-          <contractModIdx> MODIDX:Int </contractModIdx>
-          ...
-        </stylus-callState>
-        requires isListIndex(FUNCIDX, FUNCADDRS)
-      [priority(60)]
-
 
     rule [checkOutput]:
         <k> checkOutput(EXPECTED) => .K ... </k>

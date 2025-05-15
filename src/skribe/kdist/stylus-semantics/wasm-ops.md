@@ -5,6 +5,39 @@ module WASM-OPERATIONS
     imports CONFIGURATION
 ```
 
+## Wasm Module Operations
+
+```k
+    syntax InternalCmd ::= "#newWasmInstance" Account ModuleDecl     [symbol(#newWasmInstance)]
+ // ------------------------------------------------------------------------------------------------------------
+    rule [#newWasmInstance]:
+        <k> #newWasmInstance _CONTRACT CODE => #waitWasm ~> #setContractModIdx ... </k>
+        ( _:WasmCell => <wasm>
+          <instrs> initContractModule(CODE) </instrs>
+          ...
+        </wasm>)
+
+    syntax K ::= initContractModule(ModuleDecl)   [function]
+ // ------------------------------------------------------------------------
+    rule initContractModule((module _:OptionalId _:Defns):ModuleDecl #as M)
+      => sequenceStmts(text2abstract(M .Stmts))
+
+    rule initContractModule(M:ModuleDecl) => M              [owise]
+
+    syntax InternalCmd ::= "#setContractModIdx"
+ // ------------------------------------------------------
+    rule [setContractModIdx]:
+        <k> #setContractModIdx => .K ... </k>
+        <contractModIdx> _ => NEXTIDX -Int 1 </contractModIdx>
+        <nextModuleIdx> NEXTIDX </nextModuleIdx>
+        <instrs> .K </instrs>
+
+    syntax WasmStringToken ::= #unparseWasmString ( String )         [function, total, hook(STRING.string2token)]
+                             | #quoteUnparseWasmString ( String )   [function, total]
+    rule #quoteUnparseWasmString(S) => #unparseWasmString("\"" +String S +String "\"")
+
+```
+
 ## Memory Operations
 
 ```k
