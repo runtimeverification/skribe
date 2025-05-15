@@ -6,7 +6,7 @@ ARG PYTHON_VERSION=3.10
 RUN    apt-get -y update             \
     && apt-get -y upgrade            \
     && apt-get -y install            \
-         curl                        \
+         curl wget                   \
     && apt-get -y clean
 
 ARG USER_ID=9876
@@ -19,3 +19,12 @@ WORKDIR /home/user
 
 ENV PATH=/home/user/.local/bin:${PATH}
 RUN curl -sSL https://install.python-poetry.org | python3 -
+
+RUN wget -O rustup.sh https://sh.rustup.rs && \
+    chmod +x rustup.sh && \
+    ./rustup.sh --verbose --target wasm32-unknown-unknown -y
+
+ENV PATH="/home/user/.cargo/bin:${PATH}"
+
+RUN rustup default 1.81
+RUN rustup target add wasm32-unknown-unknown --toolchain 1.81
