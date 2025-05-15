@@ -1,0 +1,3 @@
+[submodule "src/tests/integration/data/contracts/stylus-hello-world"]
+	path = src/tests/integration/data/contracts/stylus-hello-world
+	url = https://github.com/OffchainLabs/stylus-hello-world
