@@ -11,6 +11,7 @@ from eth_abi import encode
 from eth_utils import function_signature_to_4byte_selector
 from pyk.cli.utils import file_path
 from pyk.kast.inner import KSort
+from pyk.kast.prelude.bytes import bytesToken
 from pyk.ktool.kprint import KAstOutput, _kast
 from pyk.utils import abs_or_rel_to
 
@@ -67,9 +68,9 @@ def steps_from_dict(d: dict[str, Any], file_path: Path) -> list[KInner]:
         case 'callStylus':
 
             call_cmd = call_stylus(
-                from_account=int(d['from']),
-                to_account=int(d['to']),
-                data=call_data_from_dict(d['data']),
+                from_account=d.get('from', None),
+                to_account=d.get('to', None),
+                data=bytesToken(call_data_from_dict(d['data'])),
                 value=int(d.get('value', 0)),
             )
 

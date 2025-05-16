@@ -35,8 +35,11 @@ def account(id: int | None) -> KInner:
     return token(id) if id is not None else KApply('.Account')
 
 
-def call_stylus(from_account: int | None, to_account: int | None, data: bytes, value: int) -> KInner:
-    return KApply('callStylus', [account(from_account), account(to_account), token(data), token(value)])
+def call_stylus(from_account: int | None, to_account: int | None, data: KInner, value: int) -> KInner:
+    """Constructs a KApply term for the 'callStylus' operation. `data` is a KInner instead of 'bytes' to allow
+    passing symbolic or concrete terms (KVariable or KToken) when fuzzing
+    """
+    return KApply('callStylus', [account(from_account), account(to_account), data, token(value)])
 
 
 def check_output(bs: bytes) -> KInner:
