@@ -5,8 +5,9 @@ from argparse import ArgumentParser
 from pathlib import Path
 
 from pyk.cli.utils import ensure_dir_path
+from rich.console import Console
 
-from .skribe import Skribe
+from .skribe import InitializationError, Skribe
 from .utils import concrete_definition
 
 
@@ -47,9 +48,27 @@ def _exec_run(dir_path: Path | None, id: str | None, max_examples: int) -> None:
     Returns:
         None
     """
+    err_console = Console(stderr=True)
+
     dir_path = Path.cwd() if dir_path is None else dir_path
 
-    exit(0)
+    skribe = Skribe(concrete_definition)
+
+    try:
+        failed = skribe.deploy_and_run(contract_dir=dir_path, id=id, max_examples=max_examples)
+    except InitializationError:
+        err_console.print('[bold red]Initialization failed[/bold red]')
+        exit(1)
+
+    if not failed:
+        exit(0)
+
+    err_console.print(f'[bold red]{len(failed)}[/bold red] test(s) failed:')
+
+    for err in failed:
+        err_console.print(f'  {err.test_name} {err.counterexample}')
+
+    exit(1)
 
 
 def _argument_parser() -> ArgumentParser:
