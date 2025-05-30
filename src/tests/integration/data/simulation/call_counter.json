@@ -30,9 +30,9 @@
       {
           "type": "callStylus",
           "from": 0,
-          "to": 1,
+          "to": 2,
           "data": {
-              "function": "increment", "types": [], "args": []
+              "function": "increment", "types": ["address"], "args": ["0x0000000000000000000000000000000000000001"]
           },
           "value": 0
       },
