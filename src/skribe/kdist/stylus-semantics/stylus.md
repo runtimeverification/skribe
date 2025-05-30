@@ -5,6 +5,9 @@ requires "switch.md"
 requires "hostfuns.md"
 
 module STYLUS-SYNTAX
+    imports WASM
+
+    syntax InternalCmd ::= "#call"         Int Int Int            Int Int Bytes Bool
 
 endmodule
 
@@ -12,14 +15,12 @@ module STYLUS
     imports STYLUS-SYNTAX
     imports CONFIGURATION
     imports HOSTFUNS
-    imports WASM
 ```
 - `#call` retrieves the contract's code and initiates execution. This is equivalent to `#call` in evm-semantics.
 - `#callWithWasm` executes a contract call from given Wasm code. This is analogous to `#callWithCode` in evm-semantics, but tailored for Wasm contracts
 
 ```k
-    syntax InternalCmd ::= "#call"         Int Int Int            Int Int Bytes Bool
-                         | "#callWithWasm" Int Int Int ModuleDecl Int Int Bytes Bool
+    syntax InternalCmd ::= "#callWithWasm" Int Int Int ModuleDecl Int Int Bytes Bool
                          | "#mkCall"       Int Int Int ModuleDecl     Int Bytes Bool
 
     rule [call.wasm]:

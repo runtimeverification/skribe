@@ -67,6 +67,16 @@ module CONFIGURATION
         <instrs> dropStack => .K ... </instrs>
         <stylusStack> _V : S => S </stylusStack>
 
+    syntax InternalCmd ::= "#asWordFromStack"
+ // ----------------------------------------
+    rule [asWordFromStack]:
+        <k> #asWordFromStack => .K ... </k>
+        <stylusStack> (BS => #asWord(BS)) : _REST </stylusStack>
+
+    rule [asWordFromStack-instr]:
+        <instrs> #asWordFromStack => .K ... </instrs>
+        <stylusStack> (BS => #asWord(BS)) : _REST </stylusStack>
+
 ```
 
 # State Stacks
