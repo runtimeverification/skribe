@@ -40,7 +40,10 @@ def test_simulation(test_file: Path) -> None:
 
 
 @pytest.mark.parametrize('contract_dir', TEST_CONTRACT_DIRS, ids=str)
-def test_build(contract_dir: Path) -> None:
+def test_build_and_fuzz(contract_dir: Path) -> None:
 
     skribe = Skribe(concrete_definition)
     skribe.build_stylus_contract(contract_dir=contract_dir)
+
+    errors = skribe.deploy_and_run(contract_dir, 100)
+    assert not errors
