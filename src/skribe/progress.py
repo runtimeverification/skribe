@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING
 from rich.progress import BarColumn, MofNCompleteColumn, Progress, TextColumn, TimeElapsedColumn
 
 if TYPE_CHECKING:
-    from typing import Iterable
+    from collections.abc import Iterable
 
     from rich.progress import TaskID
 

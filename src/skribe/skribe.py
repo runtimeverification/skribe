@@ -24,7 +24,8 @@ from .simulation import call_data
 from .utils import SkribeError, concrete_definition, parse_wasm_file, subst_on_program_cell
 
 if TYPE_CHECKING:
-    from typing import Any, Mapping
+    from typing import Any
+    from collections.abc import Mapping
 
     from pyk.kast.inner import KInner
     from pyk.kore.syntax import Pattern
