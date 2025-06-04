@@ -26,5 +26,5 @@ RUN wget -O rustup.sh https://sh.rustup.rs && \
 
 ENV PATH="/home/user/.cargo/bin:${PATH}"
 
-RUN rustup default 1.81
-RUN rustup target add wasm32-unknown-unknown --toolchain 1.81
+RUN rustup default 1.83.0
+RUN rustup target add wasm32-unknown-unknown --toolchain 1.83.0
