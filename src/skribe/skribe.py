@@ -41,7 +41,7 @@ CALLDATA_EVAR = EVar('VarCALLDATA', SortApp('SortBytes'))
 TRUE_DATA = encode(['bool'], [True])
 EMPTY_DATA = encode([], [])
 
-TEST_CALLER_ID = None
+TEST_CALLER_ID = 0
 TEST_CONTRACT_ID = 1
 
 
@@ -79,18 +79,19 @@ class Skribe:
         )
 
     @staticmethod
-    def deploy_test(contract: KInner, init: bool) -> KInner:
+    def deploy_test(contract: KInner, init: bool, child_contracts: list[KInner]) -> KInner:
         """Takes a Stylus contract and its dependencies as kast terms and deploys them in a fresh configuration.
 
         Args:
             contract: The test contract to deploy, represented as a kast term.
             init: Whether to initialize the contract by calling its 'init' function after deployment.
+            child_contracts: The child contracts to deploy, represented as kast terms.
 
         Returns:
             A configuration with the contract deployed.
 
         Raises:
-            AssertionError if the deployment fails
+            InitializationError if the deployment fails
         """
 
         # Stylus currently does not support constructors. As a workaround,
@@ -100,8 +101,18 @@ class Skribe:
             if not init:
                 return ()
 
-            data = call_data('init', [], [])
+            # Set up the steps that will deploy the child contracts
+            # Contract IDs 0 and 1 are reserved
+            deploy_children = [set_stylus_contract(i, c, {}) for i, c in enumerate(child_contracts, start=2)]
+
+            data = call_data(
+                'init',
+                ['address'] * len(child_contracts),
+                [i.to_bytes(length=20, byteorder='big') for i in range(2, 2 + len(child_contracts))],
+            )
+
             return (
+                *deploy_children,
                 call_stylus(TEST_CALLER_ID, TEST_CONTRACT_ID, bytesToken(data), 0),
                 check_output(EMPTY_DATA),
             )
@@ -119,6 +130,7 @@ class Skribe:
         # Run the steps and grab the resulting config as a starting place to call transactions
         proc_res = concrete_definition.krun_with_kast(steps, sort=KSort('Steps'), output=KRunOutput.KORE)
         if proc_res.returncode:
+            print(proc_res.stdout)
             raise InitializationError
 
         kore_result = KoreParser(proc_res.stdout).pattern()
@@ -187,12 +199,19 @@ class Skribe:
 
         return tests
 
-    def deploy_and_run(self, contract_dir: Path, max_examples: int, id: str | None = None) -> list[FuzzError]:
+    def deploy_and_run(
+        self, contract_dir: Path, child_wasms: tuple[Path, ...], max_examples: int, id: str | None = None
+    ) -> list[FuzzError]:
         contract_metadata = read_contract_metadata(self._cargo_bin, contract_dir)
 
         contract_kast = parse_wasm_file(contract_metadata.wasm_path)
+        child_wasm_kasts = []
+        if contract_metadata.init_func is not None:
+            if contract_metadata.init_func.arity != len(child_wasms):
+                raise TypeError(f'Expected {contract_metadata.init_func.arity} children, found {len(child_wasms)}')
+            child_wasm_kasts = [parse_wasm_file(p) for p in child_wasms]
 
-        init_config = self.deploy_test(contract_kast, contract_metadata.has_init)
+        init_config = self.deploy_test(contract_kast, contract_metadata.has_init, child_wasm_kasts)
         template_conf, init_subst = split_config_from(init_config)
 
         tests = self.select_tests(contract_metadata, id)

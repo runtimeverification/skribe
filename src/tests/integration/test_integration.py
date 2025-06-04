@@ -6,6 +6,7 @@ from pyk.kdist import kdist
 from pyk.ktool.krun import _krun
 
 from skribe import simulation
+from skribe.__main__ import _read_config_file
 from skribe.skribe import Skribe
 from skribe.utils import concrete_definition
 
@@ -45,5 +46,6 @@ def test_build_and_fuzz(contract_dir: Path) -> None:
     skribe = Skribe(concrete_definition)
     skribe.build_stylus_contract(contract_dir=contract_dir)
 
-    errors = skribe.deploy_and_run(contract_dir, 100)
+    child_wasms = _read_config_file(skribe, contract_dir)
+    errors = skribe.deploy_and_run(contract_dir, child_wasms, 100)
     assert not errors

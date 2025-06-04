@@ -44,6 +44,10 @@ class ContractBinding:
     def is_test(self) -> bool:
         return self.name.startswith('test')
 
+    @cached_property
+    def arity(self) -> int:
+        return len(self.inputs)
+
 
 @dataclass(frozen=True)
 class ContractMetadata:
@@ -63,8 +67,15 @@ class ContractMetadata:
         return wasm_path.resolve()
 
     @cached_property
+    def init_func(self) -> ContractBinding | None:
+        for b in self.bindings:
+            if b.name == 'init':
+                return b
+        return None
+
+    @cached_property
     def has_init(self) -> bool:
-        return 'init' in (b.name for b in self.bindings)
+        return self.init_func is not None
 
     @cached_property
     def test_functions(self) -> tuple[ContractBinding, ...]:
@@ -72,6 +83,11 @@ class ContractMetadata:
 
     def typecheck(self) -> None:
         for b in self.bindings:
+            if b.name == 'init':
+                no_output = not b.outputs
+                only_address = all(i == 'address' for i in b.inputs)
+                if no_output and only_address:
+                    continue
             if not b.is_test:
                 continue
             if not b.outputs:
