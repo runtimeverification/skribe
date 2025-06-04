@@ -1,13 +1,65 @@
-# skribe
+# Skribe
 
 
 ## Installation
 
-Prerequsites: `python >= 3.10`, `pip >= 20.0.2`, `poetry >= 1.3.2`.
+Prerequsites: [K framework](https://github.com/runtimeverification/k/releases/latest), `python >= 3.10`, `pip >= 20.0.2`, `poetry >= 1.3.2`.
 
 ```bash
 make build
 pip install dist/*.whl
+```
+## Usage
+
+Skribe has two subcommands: `build` and `run`.
+
+```
+$ skribe --help
+usage: skribe [-h] {build,run} ...
+
+positional arguments:
+  {build,run}
+    build      build the test contract
+    run        run tests with fuzzing
+
+options:
+  -h, --help   show this help message and exit
+```
+
+### Build
+
+Compile the test contract located in the specified directory.
+
+```bash
+skribe build --directory path/to/contract
+```
+
+If no directory is provided, Skribe defaults to the current working directory.
+
+**Options:**
+
+* `--directory`, `-C`: Path to the test contract directory (default: `.`)
+
+### Run Tests
+
+Run fuzz tests on the test contract.
+
+```bash
+skribe run --directory path/to/contract --id test_function --max-examples 200
+```
+
+**Options:**
+
+* `--directory`, `-C`: Path to the test contract directory (default: `.`)
+* `--id`: Name of a single test function to run. If not specified, Skribe runs **all** test functions.
+* `--max-examples`: Maximum number of fuzzing inputs to generate (default: `100`)
+
+### Example
+
+```bash
+cd src/tests/integration/data/contracts/test-hello-world
+skribe build
+skribe run --max-examples 500
 ```
 
 ## `skribe-simulation`
