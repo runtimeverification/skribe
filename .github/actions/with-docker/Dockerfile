@@ -6,8 +6,12 @@ ARG PYTHON_VERSION=3.10
 RUN    apt-get -y update             \
     && apt-get -y upgrade            \
     && apt-get -y install            \
-         curl wget                   \
-    && apt-get -y clean
+         curl wget libssl-dev        \
+         software-properties-common  \
+    && apt-get -y clean              \
+    && add-apt-repository ppa:ethereum/ethereum \
+    && apt-get update                \
+    && apt-get install solc
 
 ARG USER_ID=9876
 ARG GROUP_ID=9876
@@ -26,5 +30,6 @@ RUN wget -O rustup.sh https://sh.rustup.rs && \
 
 ENV PATH="/home/user/.cargo/bin:${PATH}"
 
+RUN cargo install --force cargo-stylus
 RUN rustup default 1.83.0
 RUN rustup target add wasm32-unknown-unknown --toolchain 1.83.0
