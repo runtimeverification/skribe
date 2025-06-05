@@ -25,6 +25,65 @@ positional arguments:
 options:
   -h, --help   show this help message and exit
 ```
+### Skribe test contract structure
+
+A *Skribe test contract* is a regular Stylus contract written in Rust, organized in a way that allows Skribe to discover
+and execute test functions automatically. It can include an optional init function for setup and any number of test
+functions following a specific naming and return convention.
+
+#### `init` function and `skribe.json` file
+
+The test contract may optionally define an `init` function, which Skribe calls once before executing any tests. This
+function serves as a workaround for Stylus's current lack of constructor support and can be used to perform setup logic,
+such as initializing state or linking to other contracts. If the `init` function takes arguments, they must be contract
+addresses referring to other contracts that the test will interact with. These are specified in a `skribe.json` file,
+which contains a `"contracts"` field listing the paths to the relevant Wasm files. Skribe deploys these contracts ahead
+of time and passes their addresses to the `init` function in the given order.
+
+
+Example contract with `init` function:
+
+```rust
+#[public]
+impl TestCounter {
+    pub fn init(&mut self, counter: Address) {
+        self.counter.set(counter);
+    }
+    // ...
+}
+```
+
+Example `skribe.json` file for the contract above:
+
+```json
+{
+  "contracts": [
+    "../stylus-hello-world/target/wasm32-unknown-unknown/release/stylus_hello_world.wasm"
+  ]
+}
+```
+
+#### Test functions
+
+Test functions must start with the `test_` prefix and return either `bool` or `()`. A panic or a `false` result is
+considered a test failure. Skribe automatically discovers these test functions and runs them with randomized input
+values as part of the fuzzing process.
+
+Example test function:
+
+```rust
+#[public]
+impl TestCounter {
+    // ...
+
+    pub fn test_call_set_get_number(&mut self, x: U256) -> bool {
+        let counter = ICounter::new(self.counter.get());
+        counter.set_number(Call::new_in(self), x).unwrap();
+
+        counter.number(self).unwrap() == x
+    }
+}
+```
 
 ### Build
 
@@ -53,6 +112,30 @@ skribe run --directory path/to/contract --id test_function --max-examples 200
 * `--directory`, `-C`: Path to the test contract directory (default: `.`)
 * `--id`: Name of a single test function to run. If not specified, Skribe runs **all** test functions.
 * `--max-examples`: Maximum number of fuzzing inputs to generate (default: `100`)
+
+The `skribe run` command performs the following sequence of actions:
+
+1. **Create contracts**
+  Skribe reads the `skribe.json` file in the specified directory, and creates contracts from the provided Wasm files,
+  obtaining their addresses.
+
+2. **Initialize the test contract**
+  Skribe creates the test contract. If the test contract defines an `init` function, Skribe invokes it once before
+  executing any tests, passing the addresses of the deployed child contracts in the order specified in `skribe.json`.
+  This allows for setup tasks such as linking to child contracts or initializing the blockchain state.
+
+3. **Discover test functions**
+  Skribe scans the test contract for functions with names starting with the `test_` prefix, and displays them as a
+  progress bar.
+
+4. **Execute fuzz tests**
+  Skribe fuzzes the test functions, either all discovered or the one specified by the `--id` option—up to the limit set
+  by `--max-examples` or until a failure occurs. The progress of fuzzing each test function is displayed with a progress
+  bar.
+
+5. **Report results**
+  Failures are detected when a test function panics or returns `false`. Skribe reports any failing inputs and outcomes
+  to the user.
 
 ### Example
 
