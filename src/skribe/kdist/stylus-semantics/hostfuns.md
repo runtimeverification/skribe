@@ -3,11 +3,12 @@
 requires "configuration.md"
 requires "wasm-ops.md"
 requires "evm-types.md"
+requires "stylus.md"
 
 module HOSTFUNS
     imports CONFIGURATION
     imports WASM-OPERATIONS
-    imports EVM-TYPES
+    imports STYLUS-SYNTAX
 
     syntax InternalInstr ::= hostCallAux(String, String)        [symbol(hostCallAux)]
 
@@ -160,6 +161,75 @@ Equivalent to the [`SLOAD`](https://www.evm.codes/#54) opcode in EVM.
         <instrs> hostCallAux ( "vm_hooks" , "write_result" ) => .K ... </instrs>
         <stylusStack> DATA : S => S </stylusStack>
         <stylus-output> _ => DATA </stylus-output>
+
+```
+
+## call_contract
+
+```k
+    rule [hostCall-call-contract]:
+        <instrs> hostCall ( "vm_hooks" , "call_contract" , [ i32  i32  i32  i32  i64  i32  .ValTypes ] -> [ i32  .ValTypes ] )
+              => pushStack(RET_LEN_PTR)
+              ~> #memLoad(VALUE_PTR, 32)
+              ~> #asWordFromStack
+              ~> #memLoad(DATA_PTR, DATA_LEN)
+              ~> #memLoad(CONTRACT_PTR, 20)
+              ~> #asWordFromStack
+              ~> hostCallAux("vm_hooks", "call_contract")
+                 ...
+        </instrs>
+        <locals>
+          0 |-> < i32 > CONTRACT_PTR
+          1 |-> < i32 > DATA_PTR
+          2 |-> < i32 > DATA_LEN
+          3 |-> < i32 > VALUE_PTR
+          4 |-> < i64 > _GAS
+          5 |-> < i32 > RET_LEN_PTR
+        </locals>
+
+    rule [hostCallAux-call-contract]:
+        <instrs> hostCallAux ( "vm_hooks" , "call_contract" )
+              // TODO #accessAccounts ACCTTO ~> #checkCall ACCTFROM VALUE
+              => #waitCommands
+              ~> #returnStylus RET_LEN_PTR
+                 ...
+        </instrs>
+        <k> (.K => #call ACCTFROM ACCTTO ACCTTO VALUE VALUE DATA false) ... </k>
+        <stylusStack> ACCTTO:Int : DATA:Bytes : VALUE:Int : RET_LEN_PTR : S => S </stylusStack>
+        <stylus-callee> ACCTFROM </stylus-callee>
+
+
+    syntax InternalInstr ::= "#returnStylus" Int
+ // ----------------------------------------
+    rule [returnStylus-success]:
+        <instrs> #returnStylus RET_LEN_PTR
+              => #memStore(RET_LEN_PTR, Int2Bytes(4, lengthBytes(OUTPUT), LE))
+              ~> i32.const 0
+                 ...
+        </instrs>
+        <stylus-output> OUTPUT </stylus-output>
+
+```
+
+## read_return_data
+
+```k
+    rule [hostCall-read-return-data]:
+        <instrs> hostCall ( "vm_hooks" , "read_return_data" , [ i32  i32  i32  .ValTypes ] -> [ i32  .ValTypes ] )
+              => #let DATA = substrBytes(
+                    OUTPUT,
+                    minInt(OFFSET, lengthBytes(OUTPUT)),
+                    minInt(OFFSET +Int SIZE, lengthBytes(OUTPUT))
+                  )
+                  #in ( #memStore(DEST_PTR, DATA) ~> i32.const lengthBytes(DATA) )
+                 ...
+        </instrs>
+        <locals>
+          0 |-> < i32 > DEST_PTR
+          1 |-> < i32 > OFFSET
+          2 |-> < i32 > SIZE
+        </locals>
+        <stylus-output> OUTPUT </stylus-output>
 
 ```
 

@@ -4,13 +4,14 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.poetry]
 name = "skribe"
-version = "0.1.8"
+version = "0.1.9"
 description = "Property testing for Stylus smart contracts"
 authors = [
     "Runtime Verification, Inc. <contact@runtimeverification.com>",
 ]
 
 [tool.poetry.scripts]
+skribe = "skribe.__main__:main"
 skribe-simulation = "skribe.simulation:main"
 
 [tool.poetry.plugins.kdist]

@@ -9,7 +9,7 @@ module CONFIGURATION
     imports WASM-AUTO-ALLOCATE
     imports STYLUS-DATA
 
-    configuration 
+    configuration
       <stylus>
         <k> .K </k>
         <stylusStack> .StylusStack </stylusStack>
@@ -20,6 +20,7 @@ module CONFIGURATION
           <stylus-callee>    .Account </stylus-callee>
           <stylus-callData>  .Bytes   </stylus-callData>
           <stylus-callValue> 0        </stylus-callValue>
+          <stylus-static>    false    </stylus-static>
           <wasm/>
           <contractModIdx> .Int </contractModIdx>
         </stylus-callState>
@@ -66,6 +67,16 @@ module CONFIGURATION
         <instrs> dropStack => .K ... </instrs>
         <stylusStack> _V : S => S </stylusStack>
 
+    syntax InternalCmd ::= "#asWordFromStack"
+ // ----------------------------------------
+    rule [asWordFromStack]:
+        <k> #asWordFromStack => .K ... </k>
+        <stylusStack> (BS => #asWord(BS)) : _REST </stylusStack>
+
+    rule [asWordFromStack-instr]:
+        <instrs> #asWordFromStack => .K ... </instrs>
+        <stylusStack> (BS => #asWord(BS)) : _REST </stylusStack>
+
 ```
 
 # State Stacks
@@ -76,33 +87,33 @@ The `<callStack>` cell stores a list of previous contract execution states.
 These internal commands manages the call stack when calling and returning from a contract.
 
 ```k
-    syntax InternalCmd ::= "pushCallState"  [symbol(pushCallState)]
+    syntax InternalCmd ::= "#pushCallStack"
  // ---------------------------------------
-    rule [pushCallState]:
-         <k> pushCallState => .K ... </k>
+    rule [pushCallStack]:
+         <k> #pushCallStack => .K ... </k>
          <callStack> (.List => ListItem(CALLSTATE)) ... </callStack>
-         CALLSTATE:StylusCallStateCell 
+         CALLSTATE:StylusCallStateCell
       [priority(60)]
 
-    syntax InternalCmd ::= "popCallState"  [symbol(popCallState)]
+    syntax InternalCmd ::= "#popCallStack"
  // --------------------------------------
-    rule [popCallState]:
-         <k> popCallState => .K ... </k>
+    rule [popCallStack]:
+         <k> #popCallStack => .K ... </k>
          <callStack> (ListItem(CALLSTATE:StylusCallStateCell) => .List) ... </callStack>
          (_:StylusCallStateCell => CALLSTATE)
       [priority(60)]
 
-    syntax InternalCmd ::= "dropCallState"  [symbol(dropCallState)]
+    syntax InternalCmd ::= "#dropCallStack"
  // ---------------------------------------
-    rule [dropCallState]:
-         <k> dropCallState => .K ... </k>
+    rule [dropCallStack]:
+         <k> #dropCallStack => .K ... </k>
          <callStack> (ListItem(_) => .List) ... </callStack>
       [priority(60)]
 
-    syntax InternalCmd ::= "resetCallstate"      [symbol(resetCallState)]
- // ---------------------------------------------------------------------------
+    syntax InternalCmd ::= "#resetCallstate"
+ // ---------------------------------------
     rule [resetCallstate]:
-        <k> resetCallstate => .K ... </k>
+        <k> #resetCallstate => .K ... </k>
         (_:StylusCallStateCell => <stylus-callState> <instrs> .K </instrs> ... </stylus-callState>)
       [preserves-definedness] // all constant configuration cells should be defined
 
@@ -115,26 +126,26 @@ These internal commands manages the call stack when calling and returning from a
     syntax WorldSnapshot ::= "{" StylusContractsCellFragment "}"
  // --------------------------------------------------------
 
-    syntax InternalCmd ::= "pushWorldState"  [symbol(pushWorldState)]
- // ---------------------------------------
+    syntax InternalCmd ::= "#pushWorldState"
+ // ----------------------------------------
     rule [pushWorldState]:
-         <k> pushWorldState => .K ... </k>
+         <k> #pushWorldState => .K ... </k>
          <interimStates> (.List => ListItem({ CONTRACTS })) ... </interimStates>
          <stylus-contracts> CONTRACTS </stylus-contracts>
       [priority(60)]
 
-    syntax InternalCmd ::= "popWorldState"  [symbol(popWorldState)]
- // --------------------------------------
+    syntax InternalCmd ::= "#popWorldState"
+ // ---------------------------------------
     rule [popWorldState]:
-         <k> popWorldState => .K ... </k>
+         <k> #popWorldState => .K ... </k>
          <interimStates> (ListItem({ CONTRACTS }) => .List) ... </interimStates>
          <stylus-contracts> _ =>  CONTRACTS </stylus-contracts>
       [priority(60)]
 
-    syntax InternalCmd ::= "dropWorldState"  [symbol(dropWorldState)]
- // ---------------------------------------
+    syntax InternalCmd ::= "#dropWorldState"
+ // ----------------------------------------
     rule [dropWorldState]:
-         <k> dropWorldState => .K ... </k>
+         <k> #dropWorldState => .K ... </k>
          <interimStates> (ListItem(_) => .List) ... </interimStates>
       [priority(60)]
 ```
