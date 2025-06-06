@@ -20,8 +20,10 @@
       inputs.pyproject-nix.follows = "uv2nix/pyproject-nix";
     };
     pyproject-nix.follows = "uv2nix/pyproject-nix";
+
+    rust-overlay.url = "github:oxalica/rust-overlay";
   };
-  outputs = { self, rv-nix-tools, nixpkgs, flake-utils, pyproject-nix, pyproject-build-systems, uv2nix, k-framework }:
+  outputs = { self, rv-nix-tools, nixpkgs, flake-utils, pyproject-nix, pyproject-build-systems, uv2nix, k-framework, rust-overlay }:
   let
     pythonVer = "310";
   in flake-utils.lib.eachSystem [
@@ -59,6 +61,7 @@
           uvOverlay
           kOverlay
           skribeOverlay
+          (import rust-overlay)
         ];
       };
       python = pkgs."python${pythonVer}";
