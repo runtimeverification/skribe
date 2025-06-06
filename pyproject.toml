@@ -20,6 +20,7 @@ email = "contact@runtimeverification.com"
 
 [project.scripts]
 skribe-simulation = "skribe.simulation:main"
+skribe-kdist = "pyk.kdist.__main__:main"
 
 [project.entry-points.kdist]
 stylus-semantics = "skribe.kdist.plugin"
