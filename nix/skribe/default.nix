@@ -6,11 +6,17 @@
 
   k,
   which,
+  rust-bin,
 
+  skribe-rust ? null,
   skribe-pyk,
   rev ? null
 } @ args:
-
+let
+  rustWithWasmTarget = rust-bin.stable.latest.default.override {
+    targets = [ "wasm32-unknown-unknown" ];
+  };
+in
 stdenv.mkDerivation {
   pname = "skribe";
   version = if (rev != null) then rev else "dirty";
@@ -38,6 +44,16 @@ stdenv.mkDerivation {
     mkdir -p $out
     cp -r ./kdist-*/* $out/
     mkdir -p $out/bin
-    makeWrapper ${skribe-pyk}/bin/skribe-simulation $out/bin/skribe-simulation --prefix PATH : ${lib.makeBinPath [ which k ]} --set KDIST_DIR $out
+    makeWrapper ${skribe-pyk}/bin/skribe-simulation $out/bin/skribe-simulation --prefix PATH : ${
+      lib.makeBinPath
+      ([ which k ] ++ lib.optionals (skribe-rust != null) [
+        skribe-rust
+      ])
+    } --set KDIST_DIR $out
   '';
+
+  passthru = if skribe-rust == null then {
+    # list all supported solc versions here
+    rust = callPackage ./default.nix (args // { skribe-rust = rustWithWasmTarget; });
+  } else { };
 }
