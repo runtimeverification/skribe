@@ -3,6 +3,9 @@ on:
   push:
     branches:
       - '_update-deps/runtimeverification/wasm-semantics'
+      - '_update-deps/runtimeverification/rv-nix-tools'
+      - '_update-deps-cron/uv2nix'
+      - '_update-deps-cron/pyproject-build-systems'
   workflow_dispatch:
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
