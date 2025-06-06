@@ -11,7 +11,9 @@ let
   # `foo.setuptools-scm = [ "toml" ]` in Nix
   buildSystemOverrides = {
     # add dependencies here, e.g.:
-    # pyperclip.setuptools = [ ];
+    pykwasm.setuptools = [ ];
+    pykwasm.poetry-core = [ ];
+    py-wasm.setuptools = [ ];
   };
 in
 mapAttrs (
