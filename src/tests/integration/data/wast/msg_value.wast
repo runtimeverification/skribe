@@ -3,6 +3,9 @@
 
 setExitCode(1)
 
+newAccount(0)
+setBalance(0, 200000000200000000)
+
 setStylusContract(
   1,
   (module

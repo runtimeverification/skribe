@@ -23,6 +23,14 @@ def set_exit_code(i: int) -> KInner:
     return KApply('setExitCode', [token(i)])
 
 
+def new_account(id: int) -> KInner:
+    return KApply('newAccount', [token(id)])
+
+
+def set_balance(id: int, value: int) -> KInner:
+    return KApply('setBalance', [token(id), token(value)])
+
+
 def set_stylus_contract(id: int, code: KInner, storage: Mapping[int, int]) -> KInner:
     # TODO fix type error
     #       Argument 1 to "map_of" has incompatible type "dict[KToken, KToken]";

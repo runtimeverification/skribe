@@ -3,6 +3,8 @@
 
 setExitCode(1)
 
+newAccount(0)
+
 setStylusContract(
   1,
   (module
