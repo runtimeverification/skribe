@@ -9,9 +9,8 @@ description = "Property testing for Stylus smart contracts"
 readme = "README.md"
 requires-python = "~=3.10"
 dependencies = [
-    "pykwasm@git+https://github.com/runtimeverification/wasm-semantics.git@v0.1.129#subdirectory=pykwasm",
-    "eth-abi>=5.2.0,<6",
-    "pycryptodome>=3.22.0,<4",
+    "pykwasm@git+https://github.com/runtimeverification/wasm-semantics.git@bbc96eeb71ff17213d3a6127fa7876ec0c47ef57#subdirectory=pykwasm",
+    "kontrol@git+https://github.com/runtimeverification/kontrol.git@v1.0.166",
 ]
 
 [[project.authors]]
