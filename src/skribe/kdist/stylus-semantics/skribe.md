@@ -10,17 +10,21 @@ endmodule
 
 module SKRIBE-SYNTAX-COMMON
     imports INT-SYNTAX
-    imports STYLUS-DATA
+    imports EVM-TYPES
     imports BYTES
     imports MAP
 
     syntax ModuleDecl
 
     syntax Step ::= setExitCode(Int)                                                             [symbol(setExitCode)]
+                  | newAccount(id: Int)                                                          [symbol(newAccount)]
+                  | setBalance(id: Int, value: Int)                                              [symbol(setBalance)]
                   | setStylusContract(id: Int, code: ModuleDecl, storage: Map)                   [symbol(setStylusContract)]
                   | callStylus( from: Account, to: Account, callData: Bytes, callValue: Int)     [symbol(callStylus)]
                   | checkOutput( data: Bytes )                                                   [symbol(checkOutput)]
     syntax Steps ::= List{Step, ""}                    [symbol(skribeSteps)]
+
+    syntax EthereumSimulation ::= Steps
 
 endmodule
 
@@ -28,49 +32,55 @@ module SKRIBE
     imports STYLUS
     imports SKRIBE-SYNTAX-COMMON
     imports SWITCH
+    imports BOOL
 
     configuration
       <skribe>
-        <program> $PGM:Steps </program>
         <stylus/>
-        <exitCode exit=""> 1 </exitCode>
       </skribe>
-
-    rule [load-program]:
-        <program> (_S:Step _SS:Steps) #as PGM => .Steps </program>
-        <k> _ => PGM </k>
 
     rule [steps-empty]:
         <k> .Steps => .K </k>
-        <instrs> .K </instrs>
 
     rule [steps-seq]:
         <k> S:Step SS:Steps => S ~> SS ... </k>
-        <instrs> .K </instrs>
 
     rule [setExitCode]:
         <k> setExitCode(I) => .K ... </k>
-        <exitCode> _ => I </exitCode>
-        <instrs> .K </instrs>
+        <exit-code> _ => I </exit-code>
+
+    rule <k> newAccount(I) => #newAccount I ... </k>
+
+    rule [setBalance]:
+        <k> setBalance(ACCT, BAL) => .K ... </k>
+        <account>
+           <acctID> ACCT </acctID>
+           <balance> _ => BAL </balance>
+           ...
+        </account>
 
     rule [setStylusContract-existing]:
-        <k> setStylusContract(ID, CODE, STORAGE) => .K ... </k>
-        <stylus-contract>
-           <stylus-contract-id>      ID           </stylus-contract-id>
-           <stylus-contract-code>    _ => CODE    </stylus-contract-code>
-           <stylus-contract-storage> _ => STORAGE </stylus-contract-storage>
+        <k> setStylusContract(ACCT, CODE, STORAGE) => .K ... </k>
+        <account>
+           <acctID> ACCT </acctID>
+           <code>    _ => CODE    </code>
+           <storage> _ => STORAGE </storage>
            ...
-        </stylus-contract>
+        </account>
       [priority(50)]
 
     rule [setStylusContract-new]:
         <k> setStylusContract(ADDR, CODE, STORAGE) => .K ... </k>
         ( .Bag =>
-          <stylus-contract>
-            <stylus-contract-id>      ADDR    </stylus-contract-id>
-            <stylus-contract-code>    CODE    </stylus-contract-code>
-            <stylus-contract-storage> STORAGE </stylus-contract-storage>
-          </stylus-contract>
+              <account>
+                <acctID>           ADDR               </acctID>
+                <balance>          0                  </balance>
+                <code>             CODE               </code>
+                <storage>          STORAGE            </storage>
+                <origStorage>      STORAGE               </origStorage>
+                <transientStorage> .Map               </transientStorage>
+                <nonce>            0                  </nonce>
+              </account>
         )
       [priority(55)]
 
@@ -80,12 +90,11 @@ module SKRIBE
          => #call FROM TO TO VALUE VALUE DATA false
             ...
         </k>
-        <stylus-output> _ => .Bytes </stylus-output>
-        <instrs> .K </instrs>
+        <output> _ => .Bytes </output>
 
     rule [checkOutput]:
         <k> checkOutput(EXPECTED) => .K ... </k>
-        <stylus-output> EXPECTED </stylus-output>
+        <output> EXPECTED </output>
 
 endmodule
 ```
