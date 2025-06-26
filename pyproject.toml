@@ -19,9 +19,8 @@ stylus-semantics = "skribe.kdist.plugin"
 
 [tool.poetry.dependencies]
 python = "^3.10"
-pykwasm = { git = "https://github.com/runtimeverification/wasm-semantics.git", tag = "v0.1.128", subdirectory = "pykwasm" }
-eth-abi = "^5.2.0"
-pycryptodome = "^3.22.0"
+pykwasm = { git = "https://github.com/runtimeverification/wasm-semantics.git", rev = "bbc96eeb71ff17213d3a6127fa7876ec0c47ef57", subdirectory = "pykwasm" }
+kontrol = { git = "https://github.com/runtimeverification/kontrol.git", tag = "v1.0.166" }
 
 [tool.poetry.group.dev.dependencies]
 autoflake = "*"
