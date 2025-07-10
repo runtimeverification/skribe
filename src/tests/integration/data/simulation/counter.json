@@ -5,6 +5,15 @@
           "value": 1
       },
       {
+          "type": "newAccount",
+          "id": 0
+      },
+      {
+          "type": "setBalance",
+          "id": 0,
+          "value": 1000
+      },
+      {
           "type": "setStylusContract",
           "id": 1,
           "code": "../contracts/stylus-hello-world/target/wasm32-unknown-unknown/release/stylus_hello_world.wasm"
