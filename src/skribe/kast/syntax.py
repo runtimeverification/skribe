@@ -23,12 +23,20 @@ def set_exit_code(i: int) -> KInner:
     return KApply('setExitCode', [token(i)])
 
 
-def set_stylus_contract(id: int, code: KInner, storage: Mapping[int, int]) -> KInner:
+def new_account(id: int) -> KInner:
+    return KApply('newAccount', [token(id)])
+
+
+def set_balance(id: int, value: int) -> KInner:
+    return KApply('setBalance', [token(id), token(value)])
+
+
+def set_contract(id: int, code: KInner, storage: Mapping[int, int]) -> KInner:
     # TODO fix type error
     #       Argument 1 to "map_of" has incompatible type "dict[KToken, KToken]";
     #       expected "dict[KInner, KInner] | Iterable[tuple[KInner, KInner]]"  [arg-type]
     storage_kast = map_of({token(k): token(v) for k, v in storage.items()})  # type: ignore
-    return KApply('setStylusContract', [token(id), code, storage_kast])
+    return KApply('setContract', [token(id), code, storage_kast])
 
 
 def account(id: int | None) -> KInner:

@@ -5,17 +5,26 @@ import sys
 from argparse import ArgumentParser
 from pathlib import Path
 from tempfile import NamedTemporaryFile
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Final
 
 from eth_abi import encode
 from eth_utils import function_signature_to_4byte_selector
+from kontrol.foundry import Foundry
 from pyk.cli.utils import file_path
 from pyk.kast.inner import KSort
 from pyk.kast.prelude.bytes import bytesToken
 from pyk.ktool.kprint import KAstOutput, _kast
 from pyk.utils import abs_or_rel_to
 
-from skribe.kast.syntax import call_stylus, check_output, set_exit_code, set_stylus_contract, steps_of
+from skribe.kast.syntax import (
+    call_stylus,
+    check_output,
+    new_account,
+    set_balance,
+    set_contract,
+    set_exit_code,
+    steps_of,
+)
 
 from .utils import concrete_definition, load_wasm
 
@@ -25,6 +34,24 @@ if TYPE_CHECKING:
     from typing import Any
 
     from pyk.kast.inner import KInner
+
+
+# TODO Make this parametric
+def config_vars() -> dict[str, str]:
+    return {
+        'USEGAS': '\\dv{SortBool{}}("false")',
+        'CHAINID': '\\dv{SortInt{}}("0")',
+        'SCHEDULE': "LblSHANGHAI'Unds'EVM{}()",
+        'MODE': 'LblNORMAL{}()',
+    }
+
+
+CONFIG_VAR_PARSERS: Final = {
+    'USEGAS': 'cat',
+    'CHAINID': 'cat',
+    'SCHEDULE': 'cat',
+    'MODE': 'cat',
+}
 
 
 def call_data(function: str, types: Iterable[str], args: Iterable[Any]) -> bytes:
@@ -53,7 +80,23 @@ def run(test_file: Path, depth: int | None) -> CompletedProcess:
     kast_steps = (step for item in steps_dict for step in steps_from_dict(item, test_file))
     program = steps_of(kast_steps)
 
-    return concrete_definition.krun_with_kast(pgm=program, sort=KSort('Steps'), depth=depth)
+    return concrete_definition.krun_with_kast(
+        pgm=program,
+        sort=KSort('EthereumSimulation'),
+        depth=depth,
+        cmap=config_vars(),
+        pmap=CONFIG_VAR_PARSERS,
+    )
+
+
+def json_to_storage_map(o: dict[Any, Any]) -> dict[int, int]:
+    return {int(k): int(v) for k, v in o.items()}
+
+
+def parse_account_id(x: int | str) -> int:
+    if isinstance(x, str) and x.startswith('0x'):
+        return int(x, base=16)
+    return int(x)
 
 
 def steps_from_dict(d: dict[str, Any], file_path: Path) -> list[KInner]:
@@ -62,9 +105,24 @@ def steps_from_dict(d: dict[str, Any], file_path: Path) -> list[KInner]:
     match step_type:
         case 'setExitCode':
             return [set_exit_code(int(d['value']))]
+        case 'newAccount':
+            return [new_account(parse_account_id(d['id']))]
+        case 'setBalance':
+            return [set_balance(parse_account_id(d['id']), int(d['value']))]
         case 'setStylusContract':
             wasm_path = abs_or_rel_to(Path(d['code']), file_path.parent)
-            return [set_stylus_contract(id=int(d['id']), code=load_wasm(wasm_path), storage=d.get('storage', {}))]
+            storage = json_to_storage_map(d.get('storage', {}))
+            acct_id = parse_account_id(d['id'])
+            return [set_contract(id=acct_id, code=load_wasm(wasm_path), storage=storage)]
+        case 'setEVMContract':
+            contract_dir = abs_or_rel_to(Path(d['directory']), file_path.parent)
+            foundry = Foundry(contract_dir)
+            foundry.build(True)
+            contract = foundry.contracts[foundry.lookup_full_contract_name(d['name'])]
+            bytecode = bytes.fromhex(contract.deployed_bytecode)
+            storage = json_to_storage_map(d.get('storage', {}))
+            acct_id = parse_account_id(d['id'])
+            return [set_contract(id=acct_id, code=bytesToken(bytecode), storage=storage)]
         case 'callStylus':
 
             call_cmd = call_stylus(
