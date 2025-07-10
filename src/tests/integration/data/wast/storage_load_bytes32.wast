@@ -3,7 +3,9 @@
 
 setExitCode(1)
 
-setStylusContract(
+newAccount(0)
+
+setContract(
   1,
   (module
     (import "vm_hooks" "storage_load_bytes32" (func $storage_load_bytes32 (param i32 i32)))
