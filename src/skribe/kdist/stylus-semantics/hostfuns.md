@@ -188,24 +188,38 @@ Equivalent to the [`SLOAD`](https://www.evm.codes/#54) opcode in EVM.
 
     rule [hostCallAux-call-contract]:
         <instrs> hostCallAux ( "vm_hooks" , "call_contract" )
-              // TODO #accessAccounts ACCTTO ~> #checkCall ACCTFROM VALUE
               => #waitCommands
-              ~> #returnStylus RET_LEN_PTR
                  ...
         </instrs>
+        <k> (.K => #accessAccounts ACCTTO
+                ~> #checkCall ACCTFROM VALUE
+                ~> #call ACCTFROM ACCTTO ACCTTO VALUE VALUE DATA false
+                ~> #returnStylus RET_LEN_PTR
+            ) ... 
+        </k>
         <stylusStack> ACCTTO : (DATA : VALUE : RET_LEN_PTR : S) => S </stylusStack>
         <id> ACCTFROM </id>
 
 
-    syntax InternalInstr ::= "#returnStylus" Int
- // ----------------------------------------
-    rule [returnStylus-success]:
-        <instrs> #returnStylus RET_LEN_PTR
-              => #memStore(RET_LEN_PTR, Int2Bytes(4, lengthBytes(OUTPUT), LE))
-              ~> i32.const 0
-                 ...
+    syntax InternalCmd ::= "#returnStylus" Int
+ // ------------------------------------------
+    rule [halt-returnStylus.success]:
+        <k> #halt ~> #returnStylus RET_LEN_PTR    // end of the contract call
+         => #popCallStack ~> #dropWorldState      // restore the caller's context
+         ~> #returnStylus RET_LEN_PTR             // return the output length
+         ~> #refund GAVAIL                        // gas refund
+            ...
+        </k>
+        <statusCode> EVMC_SUCCESS </statusCode>   // the call succeeded
+        <gas> GAVAIL </gas>
+
+    rule [returnStylus]:
+        <k> #returnStylus RET_LEN_PTR => .K ... </k>
+        <instrs> (.K => #memStore(RET_LEN_PTR, Int2Bytes(4, lengthBytes(OUT), LE))
+                     ~> i32.const 0) 
+                  ...
         </instrs>
-        <output> OUTPUT </output>
+        <output> OUT </output>
 
 ```
 

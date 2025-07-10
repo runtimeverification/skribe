@@ -88,6 +88,7 @@ module SKRIBE
     rule [callStylus]:
         <k> callStylus(FROM, TO, DATA, VALUE)
          => #call FROM TO TO VALUE VALUE DATA false
+         ~> #finalizeTx(true)
             ...
         </k>
         <output> _ => .Bytes </output>
@@ -95,6 +96,14 @@ module SKRIBE
     rule [checkOutput]:
         <k> checkOutput(EXPECTED) => .K ... </k>
         <output> EXPECTED </output>
+
+    rule [callStylus-done-success]:
+        <statusCode> EVMC_SUCCESS </statusCode>
+        <k> (#halt => #popCallStack ~> #dropWorldState) ~> _:Step ... </k>
+
+    rule [callStylus-done-success-end]:
+        <statusCode> EVMC_SUCCESS </statusCode>
+        <k> #halt => #popCallStack ~> #dropWorldState </k>
 
 endmodule
 ```
