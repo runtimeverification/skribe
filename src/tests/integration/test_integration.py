@@ -32,6 +32,8 @@ def test_run_wast(program: Path, tmp_path: Path) -> None:
         input_file=program,
         definition_dir=DEFINITION_DIR,
         check=True,
+        cmap=simulation.config_vars(),
+        pmap=simulation.CONFIG_VAR_PARSERS,
     )
 
 
