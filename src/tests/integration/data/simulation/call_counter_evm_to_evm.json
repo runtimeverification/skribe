@@ -9,21 +9,23 @@
           "id": 0
       },
       {
-          "type": "setStylusContract",
-          "id": 1,
-          "code": "../contracts/stylus-hello-world/target/wasm32-unknown-unknown/release/stylus_hello_world.wasm"
+          "type": "setEVMContract",
+          "id": "0x0000000000000000000000000000000000012345",
+          "directory": "../contracts/hello_foundry",
+          "name": "Counter"
       },
       {
-          "type": "setStylusContract",
-          "id": 2,
-          "code": "../contracts/call-hello/target/wasm32-unknown-unknown/release/call_hello.wasm"
+          "type": "setEVMContract",
+          "id": 67890,
+          "directory": "../contracts/call_hello_foundry",
+          "name": "CallCounter"
       },
       {
           "type": "callStylus",
           "from": 0,
-          "to": 2,
+          "to": 67890,
           "data": {
-              "function": "number", "types": ["address"], "args": ["0x0000000000000000000000000000000000000001"]
+              "function": "number", "types": ["address"], "args": ["0x0000000000000000000000000000000000012345"]
           },
           "output": {
               "type": "uint256",
@@ -34,18 +36,18 @@
       {
           "type": "callStylus",
           "from": 0,
-          "to": 2,
+          "to": 67890,
           "data": {
-              "function": "increment", "types": ["address"], "args": ["0x0000000000000000000000000000000000000001"]
+              "function": "increment", "types": ["address"], "args": ["0x0000000000000000000000000000000000012345"]
           },
           "value": 0
       },
       {
           "type": "callStylus",
           "from": 0,
-          "to": 2,
+          "to": 67890,
           "data": {
-              "function": "number", "types": ["address"], "args": ["0x0000000000000000000000000000000000000001"]
+              "function": "number", "types": ["address"], "args": ["0x0000000000000000000000000000000000012345"]
           },
           "output": {
               "type": "uint256",
