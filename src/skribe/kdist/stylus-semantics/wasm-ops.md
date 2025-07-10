@@ -11,14 +11,19 @@ module WASM-OPERATIONS
 ## Wasm Module Operations
 
 ```k
-    syntax InternalCmd ::= "#newWasmInstance" Account ModuleDecl     [symbol(#newWasmInstance)]
+    syntax InternalCmd ::= "#initStylusVM" Account ModuleDecl     [symbol(#initStylusVM)]
  // ------------------------------------------------------------------------------------------------------------
-    rule [#newWasmInstance]:
-        <k> #newWasmInstance _CONTRACT CODE => #waitWasm ~> #setContractModIdx ... </k>
-        ( _:WasmCell => <wasm>
-          <instrs> initContractModule(CODE) </instrs>
-          ...
-        </wasm>)
+    rule [#initStylusVM]:
+        <k> #initStylusVM _CONTRACT CODE => #waitWasm ~> #setContractModIdx ... </k>
+        <stylusvms>
+          (.Bag => <stylusvm>
+            <wasm>
+              <instrs> initContractModule(CODE) </instrs>
+              ...
+            </wasm>
+            ...
+          </stylusvm>)
+        </stylusvms>
 
     syntax K ::= initContractModule(ModuleDecl)   [function]
  // ------------------------------------------------------------------------

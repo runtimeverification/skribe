@@ -1,14 +1,11 @@
-
-```k
 requires "evm-types.md"
 
-module STYLUS-DATA
-    imports INT
+```k
+module STYLUS-TYPES
     imports EVM-TYPES
 
-    // KEVM Account
-    syntax Account ::= ".Account"     [symbol(".Account")]
-                     | Int
+    syntax ModuleDecl
+    syntax AccountCode ::= ModuleDecl
 
 endmodule
 ```

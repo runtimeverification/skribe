@@ -8,7 +8,6 @@ requires "stylus.md"
 module HOSTFUNS
     imports CONFIGURATION
     imports WASM-OPERATIONS
-    imports STYLUS-SYNTAX
 
     syntax InternalInstr ::= hostCallAux(String, String)        [symbol(hostCallAux)]
 
@@ -46,7 +45,7 @@ Get the ETH value in wei sent to the program.
       <locals>
         0 |-> < i32 > MEM_OFFSET
       </locals>
-      <stylus-callValue> CALL_VALUE </stylus-callValue>
+      <callValue> CALL_VALUE </callValue>
 
 ```
 
@@ -66,7 +65,7 @@ Equivalent to EVM's [`CALLDATA_COPY`](https://www.evm.codes/#37).
       <locals>
         0 |-> < i32 > MEM_OFFSET
       </locals>
-      <stylus-callData> CALL_DATA </stylus-callData>
+      <callData> CALL_DATA </callData>
 ```
 
 ## storage_load_bytes32
@@ -98,12 +97,12 @@ Equivalent to the [`SLOAD`](https://www.evm.codes/#54) opcode in EVM.
                  ...
         </instrs>
         <stylusStack> KEY:Bytes : DEST_OFFSET:Int : S => S </stylusStack>
-        <stylus-callee> ACCT </stylus-callee>
-        <stylus-contract>
-          <stylus-contract-id> ACCT </stylus-contract-id>
-          <stylus-contract-storage> STORAGE </stylus-contract-storage>
+        <id> ACCT </id>
+        <account>
+          <acctID> ACCT </acctID>
+          <storage> STORAGE </storage>
           ...
-        </stylus-contract>
+        </account>
 ```
 
 ## storage_cache_bytes32
@@ -124,12 +123,12 @@ Equivalent to the [`SLOAD`](https://www.evm.codes/#54) opcode in EVM.
     rule [hostCallAux-storage-cache-bytes32]:
         <instrs> hostCallAux ( "vm_hooks" , "storage_cache_bytes32" ) => .K ... </instrs>
         <stylusStack> KEY:Bytes : VAL:Bytes : S => S </stylusStack>
-        <stylus-callee> ACCT </stylus-callee>
-        <stylus-contract>
-          <stylus-contract-id> ACCT </stylus-contract-id>
-          <stylus-contract-storage> STORAGE => STORAGE [ #asWord(KEY) <- #asWord(VAL) ]  </stylus-contract-storage>
+        <id> ACCT </id>
+        <account>
+          <acctID> ACCT </acctID>
+          <storage> STORAGE => STORAGE [ #asWord(KEY) <- #asWord(VAL) ]  </storage>
           ...
-        </stylus-contract>
+        </account>
 ```
 
 ## storage_flush_cache
@@ -160,7 +159,7 @@ Equivalent to the [`SLOAD`](https://www.evm.codes/#54) opcode in EVM.
     rule [hostCallAux-write-result]:
         <instrs> hostCallAux ( "vm_hooks" , "write_result" ) => .K ... </instrs>
         <stylusStack> DATA : S => S </stylusStack>
-        <stylus-output> _ => DATA </stylus-output>
+        <output> _ => DATA </output>
 
 ```
 
@@ -194,9 +193,8 @@ Equivalent to the [`SLOAD`](https://www.evm.codes/#54) opcode in EVM.
               ~> #returnStylus RET_LEN_PTR
                  ...
         </instrs>
-        <k> (.K => #call ACCTFROM ACCTTO ACCTTO VALUE VALUE DATA false) ... </k>
-        <stylusStack> ACCTTO:Int : DATA:Bytes : VALUE:Int : RET_LEN_PTR : S => S </stylusStack>
-        <stylus-callee> ACCTFROM </stylus-callee>
+        <stylusStack> ACCTTO : (DATA : VALUE : RET_LEN_PTR : S) => S </stylusStack>
+        <id> ACCTFROM </id>
 
 
     syntax InternalInstr ::= "#returnStylus" Int
@@ -207,7 +205,7 @@ Equivalent to the [`SLOAD`](https://www.evm.codes/#54) opcode in EVM.
               ~> i32.const 0
                  ...
         </instrs>
-        <stylus-output> OUTPUT </stylus-output>
+        <output> OUTPUT </output>
 
 ```
 
@@ -229,7 +227,7 @@ Equivalent to the [`SLOAD`](https://www.evm.codes/#54) opcode in EVM.
           1 |-> < i32 > OFFSET
           2 |-> < i32 > SIZE
         </locals>
-        <stylus-output> OUTPUT </stylus-output>
+        <output> OUTPUT </output>
 
 ```
 
