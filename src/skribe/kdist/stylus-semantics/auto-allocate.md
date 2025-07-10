@@ -36,10 +36,10 @@ It is treated purely as a key set -- the actual stored values are not used or st
 
 ```k
     rule #autoAllocModules(.Defns, _) => .Stmts
-    rule #autoAllocModules((#import(MOD, _, _) DS) => DS, MR) requires MOD in_keys(MR)
-    rule #autoAllocModules((#import(MOD, _, _) DS), MR)
-      => newEmptyModule MOD #autoAllocModules(DS, MR [MOD <- -1])
-      requires notBool MOD in_keys(MR)
+    rule #autoAllocModules((#import(MODULE, _, _) DS) => DS, MR) requires MODULE in_keys(MR)
+    rule #autoAllocModules((#import(MODULE, _, _) DS), MR)
+      => newEmptyModule MODULE #autoAllocModules(DS, MR [MODULE <- -1])
+      requires notBool MODULE in_keys(MR)
 
     rule <instrs> MD:ModuleDecl
                => sequenceStmts(autoAllocModules(MD, MR))
@@ -52,8 +52,8 @@ It is treated purely as a key set -- the actual stored values are not used or st
 
     syntax Instr ::= hostCall(String, String, FuncType)
  // ---------------------------------------------------
-    rule <instrs> (.K => allocfunc(HOSTMOD, NEXTADDR, TYPE, [ .ValTypes ], hostCall(wasmString2StringStripped(MOD), wasmString2StringStripped(NAME), TYPE) .Instrs, #meta(... id: String2Identifier("$auto-alloc:" +String #parseWasmString(MOD) +String ":" +String #parseWasmString(NAME) ), localIds: .Map )))
-               ~> #import(MOD, NAME, #funcDesc(... type: TIDX))
+    rule <instrs> (.K => allocfunc(HOSTMOD, NEXTADDR, TYPE, [ .ValTypes ], hostCall(wasmString2StringStripped(MDL), wasmString2StringStripped(NAME), TYPE) .Instrs, #meta(... id: String2Identifier("$auto-alloc:" +String #parseWasmString(MDL) +String ":" +String #parseWasmString(NAME) ), localIds: .Map )))
+               ~> #import(MDL, NAME, #funcDesc(... type: TIDX))
               ...
          </instrs>
          <curModIdx> CUR </curModIdx>
@@ -63,7 +63,7 @@ It is treated purely as a key set -- the actual stored values are not used or st
            ...
         </moduleInst>
         <nextFuncAddr> NEXTADDR => NEXTADDR +Int 1 </nextFuncAddr>
-        <moduleRegistry> ... MOD |-> HOSTMOD ... </moduleRegistry>
+        <moduleRegistry> ... MDL |-> HOSTMOD ... </moduleRegistry>
         <moduleInst>
           <modIdx> HOSTMOD </modIdx>
           <exports> EXPORTS => EXPORTS [NAME <- NEXTFUNC ] </exports>

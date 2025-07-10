@@ -4,15 +4,7 @@ requires "configuration.md"
 requires "switch.md"
 requires "hostfuns.md"
 
-module STYLUS-SYNTAX
-    imports WASM
-
-    syntax InternalCmd ::= "#call"         Int Int Int            Int Int Bytes Bool
-
-endmodule
-
 module STYLUS
-    imports STYLUS-SYNTAX
     imports CONFIGURATION
     imports HOSTFUNS
 ```
@@ -21,46 +13,50 @@ module STYLUS
 
 ```k
     syntax InternalCmd ::= "#callWithWasm" Int Int Int ModuleDecl Int Int Bytes Bool
-                         | "#mkCall"       Int Int Int ModuleDecl     Int Bytes Bool
+                         | "#mkCallWasm"   Int Int Int ModuleDecl     Int Bytes Bool
 
     rule [call.wasm]:
         <k> #call ACCTFROM ACCTTO ACCTCODE VALUE APPVALUE ARGS STATIC
          => #callWithWasm ACCTFROM ACCTTO ACCTCODE CODE VALUE APPVALUE ARGS STATIC
             ...
         </k>
-        <stylus-contract>
-          <stylus-contract-id> ACCTCODE </stylus-contract-id>
-          <stylus-contract-code> CODE </stylus-contract-code>
+        <account>
+          <acctID> ACCTCODE </acctID>
+          <code> CODE:ModuleDecl </code>
           ...
-        </stylus-contract>
+        </account>
 
     rule [callWithWasm]:
-        <k> #callWithWasm ACCTFROM ACCTTO ACCTCODE WASMMOD _VALUE APPVALUE ARGS STATIC
+        <k> #callWithWasm ACCTFROM ACCTTO ACCTCODE WASMMOD VALUE APPVALUE ARGS STATIC
          => #pushCallStack ~> #pushWorldState
-         // ~> #transferFunds ACCTFROM ACCTTO VALUE
-         ~> #resetCallstate
-         ~> #mkCall ACCTFROM ACCTTO ACCTCODE WASMMOD APPVALUE ARGS STATIC
+         ~> #transferFunds ACCTFROM ACCTTO VALUE
+         ~> #resetCallState
+         ~> #mkCallWasm ACCTFROM ACCTTO ACCTCODE WASMMOD APPVALUE ARGS STATIC
             ...
         </k>
 
-    rule [mkCall]:
-        <k> #mkCall ACCTFROM ACCTTO ACCTCODE WASMMOD APPVALUE ARGS STATIC:Bool
-         => // #touchAccounts ACCTFROM ACCTTO ~> #accessAccounts ACCTFROM ACCTTO ~>
-            #newWasmInstance ACCTCODE WASMMOD
+    rule [mkCallWasm]:
+        <k> #mkCallWasm ACCTFROM ACCTTO ACCTCODE WASMMOD APPVALUE ARGS STATIC:Bool
+         => #touchAccounts ACCTFROM ACCTTO ~> #accessAccounts ACCTFROM ACCTTO
+         ~> #initStylusVM ACCTCODE WASMMOD
          ~> #executeWasm #quoteUnparseWasmString("user_entrypoint")
             ...
         </k>
-        <stylus-callData> _ => ARGS </stylus-callData>
-        <stylus-callValue> _ => APPVALUE </stylus-callValue>
-        <stylus-callee> _ => ACCTTO </stylus-callee>
-        <stylus-caller> _ => ACCTFROM </stylus-caller>
-        <stylus-static> OLDSTATIC:Bool => OLDSTATIC orBool STATIC </stylus-static>
+        <useGas> USEGAS:Bool </useGas>
+        <callDepth> CD => CD +Int 1 </callDepth>
+        <callData> _ => ARGS </callData>
+        <callValue> _ => APPVALUE </callValue>
+        <id> _ => ACCTTO </id>
+        <gas> GAVAIL:Gas => #if USEGAS #then GCALL:Gas #else GAVAIL:Gas #fi </gas>
+        <callGas> GCALL:Gas => #if USEGAS #then 0:Gas #else GCALL:Gas #fi </callGas>
+        <caller> _ => ACCTFROM </caller>
+        <static> OLDSTATIC:Bool => OLDSTATIC orBool STATIC </static>
 
     syntax InternalCmd ::= "#executeWasm" WasmString
  // -------------------------------------
     rule [executeWasm]:
         <k> #executeWasm FUNCNAME => #endWasm ... </k>
-        <stylus-callData> DATA </stylus-callData>
+        <callData> DATA </callData>
         <wasm>
           <instrs> .K
                 => (invoke (FUNCADDRS {{ FUNCIDX }} orDefault -1 ))
