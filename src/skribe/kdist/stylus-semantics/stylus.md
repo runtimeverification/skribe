@@ -72,5 +72,14 @@ module STYLUS
         </wasm>
         <contractModIdx> MODIDX:Int </contractModIdx>
 
+    // TODO return the correct code size for Stylus (Wasm) contracts
+    rule [extcodesize-wasm]:
+        <k> EXTCODESIZE ACCT => #accessAccounts ACCT ~> 1 ~> #push ... </k>
+        <account>
+          <acctID> ACCT </acctID>
+          <code> _CODE:ModuleDecl </code>
+          ...
+        </account>
+
 endmodule
 ```
