@@ -67,8 +67,8 @@ def steps_from_dict(d: dict[str, Any], file_path: Path) -> list[KInner]:
         case 'callStylus':
 
             call_cmd = call_stylus(
-                from_account=d.get('from', None),
-                to_account=d.get('to', None),
+                from_account=int(d['from']),
+                to_account=int(d['to']),
                 data=call_data_from_dict(d['data']),
                 value=int(d.get('value', 0)),
             )

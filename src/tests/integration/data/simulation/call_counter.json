@@ -1,0 +1,57 @@
+{
+  "steps": [
+      {
+          "type": "setExitCode",
+          "value": 1
+      },
+      {
+          "type": "setStylusContract",
+          "id": 1,
+          "code": "../contracts/stylus-hello-world/target/wasm32-unknown-unknown/release/stylus_hello_world.wasm"
+      },
+      {
+          "type": "setStylusContract",
+          "id": 2,
+          "code": "../contracts/call-hello/target/wasm32-unknown-unknown/release/call_hello.wasm"
+      },
+      {
+          "type": "callStylus",
+          "from": 0,
+          "to": 2,
+          "data": {
+              "function": "number", "types": ["address"], "args": ["0x0000000000000000000000000000000000000001"]
+          },
+          "output": {
+              "type": "uint256",
+              "value": 0
+          },
+          "value": 0
+      },
+      {
+          "type": "callStylus",
+          "from": 0,
+          "to": 2,
+          "data": {
+              "function": "increment", "types": ["address"], "args": ["0x0000000000000000000000000000000000000001"]
+          },
+          "value": 0
+      },
+      {
+          "type": "callStylus",
+          "from": 0,
+          "to": 2,
+          "data": {
+              "function": "number", "types": ["address"], "args": ["0x0000000000000000000000000000000000000001"]
+          },
+          "output": {
+              "type": "uint256",
+              "value": 1
+          },
+          "value": 0
+      },
+      {
+          "type": "setExitCode",
+          "value": 0
+      }
+  ]
+}

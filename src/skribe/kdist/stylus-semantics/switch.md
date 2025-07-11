@@ -4,7 +4,7 @@ The Stylus node operates with two main cells: `<k>` for VM commands
 and `<instrs>` for Wasm instructions. Execution begins with `<k>`; and when a
 contract is invoked, control switches to `<instrs>` for the contract's Wasm code.
 If the contract execution concludes or encounters a failure, the control returns to `<k>`.
-Additionally, certain host functions, such as token transfers and contract-to-contract calls, 
+Additionally, certain host functions, such as token transfers and contract-to-contract calls,
 necessitate command execution. In these cases, control temporarily shifts to `<k>` until
 these operations are completed.
 To implement synchronization between the `<k>` and `<instrs>` cells, `#endWasm`, `#waitWasm`,
@@ -34,33 +34,19 @@ module SWITCH
   stack after the function execution.
 
 ```k
-    // rule [endWasm-error]:
-    //     <k> #endWasm 
-    //      => popCallState
-    //      ~> popWorldState
-    //         ...
-    //     </k>
-    //     <instrs> .K </instrs>
-    //     <hostStack> (Error(_,_) #as ERR) : _ => ERR : .HostStack </hostStack>
-    //   [priority(40)]
-
     rule [endWasm]:
-        <k> #endWasm 
-         => popCallState
-         ~> dropWorldState
+        <k> #endWasm
+         => #popCallStack
+         ~> #dropWorldState
             ...
         </k>
         <instrs> .K </instrs>
         <valstack> < i32 > 0 : .ValStack </valstack>
       [priority(50)]
 
-    // rule [endWasm-trap]:
-    //     <k> #endWasm ... </k>
-    //     <instrs> trap => .K </instrs>
-
 ```
 
-- `#waitWasm` is used after the `newWasmInstance` command to wait for the
+- `#waitWasm` is used after the `#newWasmInstance` command to wait for the
   completion of the Wasm module initialization. Unlike #endWasm, it doesn't manipulate the VM output
   or call stack; it simply waits for the VM to finish its execution.
 
