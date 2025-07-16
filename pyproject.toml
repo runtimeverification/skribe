@@ -1,44 +1,51 @@
 [build-system]
-requires = ["poetry-core"]
-build-backend = "poetry.core.masonry.api"
+requires = ["hatchling"]
+build-backend = "hatchling.build"
 
-[tool.poetry]
+[project]
 name = "skribe"
-version = "0.1.9"
+version = "0.1.12"
 description = "Property testing for Stylus smart contracts"
-authors = [
-    "Runtime Verification, Inc. <contact@runtimeverification.com>",
+readme = "README.md"
+requires-python = "~=3.10"
+dependencies = [
+    "pykwasm@git+https://github.com/runtimeverification/wasm-semantics.git@v0.1.129#subdirectory=pykwasm",
+    "eth-abi>=5.2.0,<6",
+    "pycryptodome>=3.22.0,<4",
 ]
 
-[tool.poetry.scripts]
-skribe = "skribe.__main__:main"
-skribe-simulation = "skribe.simulation:main"
+[[project.authors]]
+name = "Runtime Verification, Inc."
+email = "contact@runtimeverification.com"
 
-[tool.poetry.plugins.kdist]
+[project.scripts]
+skribe-simulation = "skribe.simulation:main"
+skribe-kdist = "pyk.kdist.__main__:main"
+
+[project.entry-points.kdist]
 stylus-semantics = "skribe.kdist.plugin"
 
-[tool.poetry.dependencies]
-python = "^3.10"
-pykwasm = { git = "https://github.com/runtimeverification/wasm-semantics.git", tag = "v0.1.128", subdirectory = "pykwasm" }
-eth-abi = "^5.2.0"
-pycryptodome = "^3.22.0"
+[dependency-groups]
+dev = [
+    "autoflake",
+    "black",
+    "flake8",
+    "flake8-bugbear",
+    "flake8-comprehensions",
+    "flake8-quotes",
+    "flake8-type-checking",
+    "isort",
+    "mypy",
+    "pep8-naming",
+    "pytest",
+    "pytest-cov",
+    "pytest-mock",
+    "pytest-xdist",
+    "pyupgrade",
+]
 
-[tool.poetry.group.dev.dependencies]
-autoflake = "*"
-black = "*"
-flake8 = "*"
-flake8-bugbear = "*"
-flake8-comprehensions = "*"
-flake8-quotes = "*"
-flake8-type-checking = "*"
-isort = "*"
-mypy = "*"
-pep8-naming = "*"
-pytest = "*"
-pytest-cov = "*"
-pytest-mock = "*"
-pytest-xdist = "*"
-pyupgrade = "*"
+[tool.hatch.metadata]
+allow-direct-references = true
 
 [tool.isort]
 profile = "black"
