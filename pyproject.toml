@@ -19,6 +19,7 @@ name = "Runtime Verification, Inc."
 email = "contact@runtimeverification.com"
 
 [project.scripts]
+skribe = "skribe.__main__:main"
 skribe-simulation = "skribe.simulation:main"
 skribe-kdist = "pyk.kdist.__main__:main"
 
