@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from functools import cached_property
-from typing import TYPE_CHECKING, Callable
+from typing import TYPE_CHECKING
 
 from pyk.kast.outer import read_kast_definition
 from pyk.kdist import kdist
@@ -14,7 +14,7 @@ from pyk.ktool.krun import KRun
 from pykwasm.wasm2kast import wasm2kast
 
 if TYPE_CHECKING:
-    from collections.abc import Mapping
+    from collections.abc import Callable, Mapping
     from pathlib import Path
     from subprocess import CompletedProcess
     from typing import Any
