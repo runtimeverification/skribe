@@ -18,7 +18,7 @@ from pyk.ktool.kfuzz import KFuzzHandler, fuzz
 from pyk.ktool.krun import KRunOutput
 from pyk.utils import run_process
 
-from .contract import read_contract_metadata
+from .contract import read_foundry_contract_metadata, read_rust_contract_metadata
 from .kast.syntax import call_stylus, check_output, new_account, set_contract, set_exit_code, steps_of
 from .progress import FuzzProgress
 from .simulation import CONFIG_VAR_PARSERS, call_data, config_vars
@@ -209,14 +209,26 @@ class Skribe:
     def deploy_and_run(
         self, contract_dir: Path, child_wasms: tuple[Path, ...], max_examples: int, id: str | None = None
     ) -> list[FuzzError]:
-        contract_metadata = read_contract_metadata(self._cargo_bin, contract_dir)
 
-        contract_kast = parse_wasm_file(contract_metadata.wasm_path)
-        child_wasm_kasts = []
-        if contract_metadata.init_func is not None:
-            if contract_metadata.init_func.arity != len(child_wasms):
-                raise TypeError(f'Expected {contract_metadata.init_func.arity} children, found {len(child_wasms)}')
-            child_wasm_kasts = [parse_wasm_file(p) for p in child_wasms]
+        is_foundry = (contract_dir / 'foundry.toml').exists()
+
+        if is_foundry:
+            foundry = Foundry(contract_dir)
+            contract_metadata_ = read_foundry_contract_metadata(foundry, contract_dir)
+            assert len(contract_metadata_) == 1, f'Multiple test contracts are not supported yet: {contract_metadata_}'
+            contract_metadata = contract_metadata_[0]
+            full_name = foundry.lookup_full_contract_name(contract_metadata.name)
+            bytecode = bytes.fromhex(foundry.contracts[full_name].deployed_bytecode)
+            contract_kast: KInner = bytesToken(bytecode)
+            child_wasm_kasts: list[KInner] = []
+        else:
+            contract_metadata = read_rust_contract_metadata(self._cargo_bin, contract_dir)
+            contract_kast = parse_wasm_file(contract_metadata.wasm_path)
+            child_wasm_kasts = []
+            if contract_metadata.init_func is not None:
+                if contract_metadata.init_func.arity != len(child_wasms):
+                    raise TypeError(f'Expected {contract_metadata.init_func.arity} children, found {len(child_wasms)}')
+                child_wasm_kasts = [parse_wasm_file(p) for p in child_wasms]
 
         init_config = self.deploy_test(contract_kast, contract_metadata.has_init, child_wasm_kasts)
         template_conf, init_subst = split_config_from(init_config)

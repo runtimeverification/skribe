@@ -5,7 +5,7 @@ from dataclasses import dataclass
 from functools import cached_property, partial
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
-
+from kontrol import foundry
 from eth_abi.tools._strategies import get_abi_strategy
 from hypothesis import strategies
 from pyk.utils import run_process
@@ -15,6 +15,7 @@ from .simulation import call_data
 if TYPE_CHECKING:
 
     from hypothesis.strategies import SearchStrategy
+    from kontrol.foundry import Foundry
 
 
 @dataclass(frozen=True)
@@ -51,6 +52,7 @@ class ContractBinding:
 
 @dataclass(frozen=True)
 class ContractMetadata:
+    is_foundry: bool
     manifest_path: Path
     name: str
     bindings: tuple[ContractBinding, ...]
@@ -69,7 +71,9 @@ class ContractMetadata:
     @cached_property
     def init_func(self) -> ContractBinding | None:
         for b in self.bindings:
-            if b.name == 'init':
+            if self.is_foundry and b.name == 'setUp':
+                return b
+            if not self.is_foundry and b.name == 'init':
                 return b
         return None
 
@@ -113,7 +117,7 @@ def read_contract_bindings(cargo_bin: Path, contract_dir: Path) -> tuple[Contrac
     )
 
 
-def read_contract_metadata(cargo_bin: Path, contract_dir: Path) -> ContractMetadata:
+def read_rust_contract_metadata(cargo_bin: Path, contract_dir: Path) -> ContractMetadata:
     manifest_path = (contract_dir / 'Cargo.toml').resolve()
     proc_res = run_process(
         [str(cargo_bin), 'metadata', '--no-deps', '--manifest-path', str(manifest_path), '--format-version', '1'],
@@ -129,11 +133,52 @@ def read_contract_metadata(cargo_bin: Path, contract_dir: Path) -> ContractMetad
     bindings = read_contract_bindings(cargo_bin, contract_dir)
 
     res = ContractMetadata(
+        is_foundry=False,
         manifest_path=manifest_path,
         name=name,
         bindings=bindings,
         target_dir=target_dir,
     )
     res.typecheck()
+
+    return res
+
+
+def is_foundry_test(ctr: foundry.Contract) -> bool:
+    if ctr.is_test_contract:
+        for m in ctr.methods:
+            if m.is_test:
+                return True
+    return False
+
+
+def read_foundry_contract_metadata(foundry: Foundry, contract_dir: Path) -> list[ContractMetadata]:
+    foundry_toml = contract_dir / 'foundry.toml'
+
+    foundry.all_tests
+    res = []
+    for full_name, ctr in foundry.contracts.items():
+        if not is_foundry_test(ctr):
+            continue
+
+        contract_name = full_name.split('%')[-1]
+        bindings = []
+        for m in ctr.methods:
+            binding = ContractBinding(
+                name=m.name,
+                inputs=m.arg_types,
+                outputs=(),  # TODO identify the correct return type
+            )
+            bindings.append(binding)
+
+        res.append(
+            ContractMetadata(
+                is_foundry=True,
+                manifest_path=foundry_toml,
+                name=contract_name,
+                bindings=tuple(bindings),
+                target_dir=contract_dir / 'out' / f'{contract_name}.sol',
+            )
+        )
 
     return res
