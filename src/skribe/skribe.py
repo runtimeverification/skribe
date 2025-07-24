@@ -6,6 +6,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING
 
 from eth_abi import decode, encode
+from kontrol.foundry import Foundry
 from pyk.kast.inner import KSort, KToken, KVariable
 from pyk.kast.manip import Subst, split_config_from
 from pyk.kast.prelude.bytes import BYTES, bytesToken, pretty_bytes
@@ -77,6 +78,10 @@ class Skribe:
             cwd=contract_dir,
             check=True,
         )
+
+    def build_foundry_contract(self, contract_dir: Path) -> None:
+        foundry = Foundry(contract_dir)
+        foundry.build(True)
 
     @staticmethod
     def deploy_test(contract: KInner, init: bool, child_contracts: list[KInner]) -> KInner:
