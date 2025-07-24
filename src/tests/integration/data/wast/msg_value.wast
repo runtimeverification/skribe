@@ -3,7 +3,10 @@
 
 setExitCode(1)
 
-setStylusContract(
+newAccount(0)
+setBalance(0, 200000000200000000)
+
+setContract(
   1,
   (module
     (import "vm_hooks" "msg_value" (func $msg_value (param i32)))

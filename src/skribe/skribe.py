@@ -18,10 +18,10 @@ from pyk.ktool.krun import KRunOutput
 from pyk.utils import run_process
 
 from .contract import read_contract_metadata
-from .kast.syntax import call_stylus, check_output, set_exit_code, set_stylus_contract, steps_of
+from .kast.syntax import call_stylus, check_output, new_account, set_contract, set_exit_code, steps_of
 from .progress import FuzzProgress
-from .simulation import call_data
-from .utils import SkribeError, concrete_definition, parse_wasm_file, subst_on_program_cell
+from .simulation import CONFIG_VAR_PARSERS, call_data, config_vars
+from .utils import SkribeError, concrete_definition, parse_wasm_file, subst_on_k_cell
 
 if TYPE_CHECKING:
     from collections.abc import Mapping
@@ -103,7 +103,7 @@ class Skribe:
 
             # Set up the steps that will deploy the child contracts
             # Contract IDs 0 and 1 are reserved
-            deploy_children = [set_stylus_contract(i, c, {}) for i, c in enumerate(child_contracts, start=2)]
+            deploy_children = [set_contract(i, c, {}) for i, c in enumerate(child_contracts, start=2)]
 
             data = call_data(
                 'init',
@@ -121,16 +121,18 @@ class Skribe:
         steps = steps_of(
             [
                 set_exit_code(1),
-                set_stylus_contract(TEST_CONTRACT_ID, contract, {}),
+                new_account(0),
+                set_contract(TEST_CONTRACT_ID, contract, {}),
                 *(call_init(init)),
                 set_exit_code(0),
             ]
         )
 
         # Run the steps and grab the resulting config as a starting place to call transactions
-        proc_res = concrete_definition.krun_with_kast(steps, sort=KSort('Steps'), output=KRunOutput.KORE)
+        proc_res = concrete_definition.krun_with_kast(
+            steps, sort=KSort('EthereumSimulation'), output=KRunOutput.KORE, cmap=config_vars(), pmap=CONFIG_VAR_PARSERS
+        )
         if proc_res.returncode:
-            print(proc_res.stdout)
             raise InitializationError
 
         kore_result = KoreParser(proc_res.stdout).pattern()
@@ -162,7 +164,7 @@ class Skribe:
         def calldata_to_kore(data: bytes) -> Pattern:
             return kast_to_kore(self.definition.kdefinition, bytesToken(data), BYTES)
 
-        subst['PROGRAM_CELL'] = steps_of(
+        subst['K_CELL'] = steps_of(
             [
                 set_exit_code(1),
                 call_stylus(TEST_CALLER_ID, TEST_CONTRACT_ID, CALLDATA, 0),
@@ -182,7 +184,7 @@ class Skribe:
             check_exit_code=True,
             max_examples=max_examples,
             handler=KometFuzzHandler(self.definition, task),
-            subst_func=subst_on_program_cell,
+            subst_func=subst_on_k_cell,
         )
 
     def select_tests(self, contract_metadata: ContractMetadata, id: str | None) -> tuple[ContractBinding, ...]:

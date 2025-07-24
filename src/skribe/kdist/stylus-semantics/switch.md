@@ -30,18 +30,17 @@ module SWITCH
 ```
 
 - `#endWasm` marks the end of the execution of Wasm instructions within a contract call.
-  It initiates the context switch from the current call to its parent call, and captures the Wasm
-  stack after the function execution.
+  It initiates the context switch from the current call to its parent call.
 
 ```k
-    rule [endWasm]:
-        <k> #endWasm
-         => #popCallStack
-         ~> #dropWorldState
-            ...
-        </k>
-        <instrs> .K </instrs>
-        <valstack> < i32 > 0 : .ValStack </valstack>
+    rule [endWasm-success]:
+        <k> #endWasm => #halt ... </k>
+        <statusCode> _ => EVMC_SUCCESS </statusCode>
+        (<stylusvm>
+          <instrs> .K </instrs>
+          <valstack> < i32 > 0 : .ValStack </valstack>
+          ...
+        </stylusvm> => .Bag)
       [priority(50)]
 
 ```

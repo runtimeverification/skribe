@@ -5,7 +5,7 @@
     nixpkgs.follows = "rv-nix-tools/nixpkgs";
   
     flake-utils.url = "github:numtide/flake-utils";
-    k-framework.url = "github:runtimeverification/k/v7.1.257";
+    k-framework.url = "github:runtimeverification/k/v7.1.276";
     k-framework.inputs.nixpkgs.follows = "nixpkgs";
     uv2nix.url = "github:pyproject-nix/uv2nix/680e2f8e637bc79b84268949d2f2b2f5e5f1d81c";
     # stale nixpkgs is missing the alias `lib.match` -> `builtins.match`

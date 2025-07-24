@@ -4,9 +4,9 @@ import shutil
 from pathlib import Path
 from typing import TYPE_CHECKING
 
+from kevm_pyk.kompile import KompileTarget, kevm_kompile
 from pyk.kbuild.utils import k_version
 from pyk.kdist.api import Target
-from pyk.ktool.kompile import kompile
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Mapping
@@ -27,7 +27,8 @@ class SourceTarget(Target):
         return ('wasm-semantics.source',)
 
 
-class KompileTarget(Target):
+# TODO use kevm_pyk.kdist.plugin.KEVMTarget
+class SkribeTarget(Target):
     _kompile_args: Callable[[Path], Mapping[str, Any]]
 
     def __init__(self, kompile_args: Callable[[Path], Mapping[str, Any]]):
@@ -35,25 +36,43 @@ class KompileTarget(Target):
 
     def build(self, output_dir: Path, deps: dict[str, Path], args: dict[str, Any], verbose: bool) -> None:
         kompile_args = self._kompile_args(deps['stylus-semantics.source'])
-        kompile(output_dir=output_dir, verbose=verbose, **kompile_args)
+        enable_llvm_debug = bool(args.get('enable-llvm-debug', ''))
+        debug_build = bool(args.get('debug-build', ''))
+        ccopts = [ccopt for ccopt in args.get('ccopts', '').split(' ') if ccopt]
+
+        kevm_kompile(
+            output_dir=output_dir,
+            enable_llvm_debug=enable_llvm_debug,
+            verbose=verbose,
+            ccopts=ccopts,
+            plugin_dir=deps['evm-semantics.plugin'],
+            debug_build=debug_build,
+            **kompile_args,
+        )
+
+    def deps(self) -> tuple[str, ...]:
+        return (
+            'evm-semantics.plugin',
+            'stylus-semantics.source',
+        )
+
+    # TODO
+    # def source(self) -> tuple[Path, ...]:
+    #     ...
 
     def context(self) -> dict[str, str]:
         return {'k-version': k_version().text}
 
-    def deps(self) -> tuple[str]:
-        return ('stylus-semantics.source',)
-
 
 __TARGETS__: Final = {
     'source': SourceTarget(),
-    'llvm': KompileTarget(
+    'llvm': SkribeTarget(
         lambda src_dir: {
-            'backend': 'llvm',
+            'target': KompileTarget.LLVM,
             'main_file': src_dir / 'stylus-semantics/skribe.md',
+            'main_module': 'SKRIBE',
             'syntax_module': 'SKRIBE-SYNTAX',
-            'include_dirs': [src_dir],
-            'md_selector': 'k',
-            'warnings_to_errors': True,
+            'includes': [src_dir],
         },
     ),
 }
