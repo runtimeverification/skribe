@@ -14,6 +14,8 @@ let
     pykwasm.setuptools = [ ];
     pykwasm.poetry-core = [ ];
     py-wasm.setuptools = [ ];
+    kevm-pyk.poetry-core = [ ];
+    kontrol.hatchling = [];
   };
 in
 mapAttrs (
