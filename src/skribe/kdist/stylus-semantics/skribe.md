@@ -88,7 +88,7 @@ module SKRIBE
     rule [callStylus]:
         <k> callStylus(FROM, TO, DATA, VALUE)
          => #call FROM TO TO VALUE VALUE DATA false
-         ~> #finalizeTx(true)
+         ~> #finalizeTx(true, 0)
             ...
         </k>
         <output> _ => .Bytes </output>
