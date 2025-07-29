@@ -1,9 +1,16 @@
 
 ```k
 requires "evm.md"
-requires "data.md"
 requires "auto-allocate.md"
 requires "wasm-semantics/wasm.md"
+
+module STYLUS-TYPES
+    imports EVM-TYPES
+
+    syntax ModuleDecl
+    syntax AccountCode ::= ModuleDecl
+
+endmodule
 
 module CONFIGURATION
     imports EVM

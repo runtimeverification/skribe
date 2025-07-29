@@ -587,16 +587,16 @@ wheels = [
 
 [[package]]
 name = "hypothesis"
-version = "6.136.5"
+version = "6.136.6"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "attrs" },
     { name = "exceptiongroup", marker = "python_full_version < '3.11'" },
     { name = "sortedcontainers" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/ee/ec/83b5a33cef752a883048c1b1a3c3416abd0fdec0d11f3517ef82283873ef/hypothesis-6.136.5.tar.gz", hash = "sha256:590e9b986882d145c84490b64318d07439e81b06bd150164e197e1eb6a09bf7e", size = 457866, upload-time = "2025-07-28T04:30:17.591Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/e2/d6/6c45c56cdc532f25a354cf2c93a3bebc21b91b6a48125e3acfd364161447/hypothesis-6.136.6.tar.gz", hash = "sha256:2ad2e4f2012be4d41c6515b0628d84d48af6e6c38b4db50840bd9ac0899f5856", size = 458049, upload-time = "2025-07-28T09:48:02.495Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/22/ce/3a7a8b22e16b767aa7861d0cf57ac12d21fef31c10cbb492a48c873dd962/hypothesis-6.136.5-py3-none-any.whl", hash = "sha256:101ff06e31f5f97c82a7829bc7682093c06b964a17779fa8c4ae9c72d7a860af", size = 524756, upload-time = "2025-07-28T04:30:13.858Z" },
+    { url = "https://files.pythonhosted.org/packages/e9/e2/7fd1a9b12740b3472349f7e3c216e94b1b2e03d32c9d842284b57eb5a3f8/hypothesis-6.136.6-py3-none-any.whl", hash = "sha256:1d6296dde36d42263bd44a084c74e91467e78186676e410167f920aa0374a9e7", size = 524958, upload-time = "2025-07-28T09:47:58.938Z" },
 ]
 
 [[package]]
@@ -1238,7 +1238,7 @@ wheels = [
 [[package]]
 name = "pykwasm"
 version = "0.1.131"
-source = { git = "https://github.com/runtimeverification/wasm-semantics.git?subdirectory=pykwasm&rev=v0.1.131#e49f2bd29cf8f6be6cb23f5c4dcbaaf4348ddcec" }
+source = { git = "https://github.com/runtimeverification/wasm-semantics.git?subdirectory=pykwasm&rev=f91f5b73157fb02ae560aed933184a3bcc111f92#f91f5b73157fb02ae560aed933184a3bcc111f92" }
 dependencies = [
     { name = "cytoolz" },
     { name = "kframework" },
@@ -1538,7 +1538,7 @@ dev = [
 [package.metadata]
 requires-dist = [
     { name = "kontrol", git = "https://github.com/runtimeverification/kontrol.git?rev=v1.0.175" },
-    { name = "pykwasm", git = "https://github.com/runtimeverification/wasm-semantics.git?subdirectory=pykwasm&rev=v0.1.131" },
+    { name = "pykwasm", git = "https://github.com/runtimeverification/wasm-semantics.git?subdirectory=pykwasm&rev=f91f5b73157fb02ae560aed933184a3bcc111f92" },
 ]
 
 [package.metadata.requires-dev]
