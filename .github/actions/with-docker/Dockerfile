@@ -7,6 +7,7 @@ RUN    apt-get -y update             \
     && apt-get -y upgrade            \
     && apt-get -y install            \
          curl wget libssl-dev        \
+         libsecp256k1-dev            \  
          software-properties-common  \
     && apt-get -y clean              \
     && add-apt-repository ppa:ethereum/ethereum \
@@ -36,3 +37,7 @@ ENV PATH="/home/user/.cargo/bin:${PATH}"
 RUN cargo install --force cargo-stylus
 RUN rustup default 1.83.0
 RUN rustup target add wasm32-unknown-unknown --toolchain 1.83.0
+
+RUN curl -L https://foundry.paradigm.xyz | bash
+ENV PATH="/home/user/.foundry/bin:${PATH}"
+RUN foundryup

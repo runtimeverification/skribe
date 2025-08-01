@@ -122,13 +122,13 @@ hello_world_contract = $(test_contracts_dir)/stylus-hello-world
 hello_world_wasm = $(hello_world_contract)/$(target_subdir)/stylus_hello_world.wasm
 
 $(hello_world_wasm):
-		cargo build --manifest-path $(hello_world_contract)/Cargo.toml --release --lib --target wasm32-unknown-unknown
+		cd $(hello_world_contract) && cargo build --release --lib --target wasm32-unknown-unknown
 
 call_hello_contract = $(test_contracts_dir)/call-hello
 call_hello_wasm = $(call_hello_contract)/$(target_subdir)/call_hello.wasm
 
 $(call_hello_wasm):
-		cargo build --manifest-path $(call_hello_contract)/Cargo.toml --release --lib --target wasm32-unknown-unknown
+		cd $(call_hello_contract) && cargo build --release --lib --target wasm32-unknown-unknown
 
 test_wasms = $(hello_world_wasm) $(call_hello_wasm)
 

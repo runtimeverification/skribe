@@ -7,7 +7,6 @@ from pyk.kast.outer import read_kast_definition
 from pyk.kdist import kdist
 from pyk.konvert import kast_to_kore
 from pyk.kore.manip import substitute_vars
-from pyk.kore.prelude import generated_top
 from pyk.kore.syntax import App
 from pyk.ktool.kompile import DefinitionInfo
 from pyk.ktool.kprove import KProve
@@ -15,7 +14,7 @@ from pyk.ktool.krun import KRun
 from pykwasm.wasm2kast import wasm2kast
 
 if TYPE_CHECKING:
-    from collections.abc import Mapping
+    from collections.abc import Callable, Mapping
     from pathlib import Path
     from subprocess import CompletedProcess
     from typing import Any
@@ -83,19 +82,30 @@ def parse_wasm_file(wasm: Path) -> KInner:
     return wasm2kast(open(wasm, 'rb'))
 
 
-def subst_on_program_cell(template: Pattern, subst: Mapping[EVar, Pattern]) -> Pattern:
-    def skribe_cell(program_cell: Pattern, stylus_cell: Pattern, exit_code_cell: Pattern) -> Pattern:
-        return App("Lbl'-LT-'skribe'-GT-'", args=(program_cell, stylus_cell, exit_code_cell))
+def update_arg(arg_ix: int, f: Callable[[Pattern], Pattern]) -> Callable[[Pattern], Pattern]:
+    def res(p: Pattern) -> Pattern:
+        match p:
+            case App() if len(p.args) > arg_ix:
+                y = f(p.args[arg_ix])
+                args_ = list(p.args)
+                args_[arg_ix] = y
+                return App(p.symbol, p.sorts, args_)
+        raise ValueError(p)
 
-    match template:
-        case App(
-            "Lbl'-LT-'generatedTop'-GT-'",
-            args=(
-                App("Lbl'-LT-'skribe'-GT-'", args=(program_cell, stylus_cell, exit_code_cell)),
-                generated_counter_cell,
-            ),
-        ):
-            program_cell_ = substitute_vars(program_cell, subst)
-            return generated_top((skribe_cell(program_cell_, stylus_cell, exit_code_cell), generated_counter_cell))
+    return res
 
-    raise ValueError(template)
+
+def update_nested(path: list[int], f: Callable[[Pattern], Pattern]) -> Callable[[Pattern], Pattern]:
+    for ix in reversed(path):
+        f = update_arg(ix, f)
+
+    return f
+
+
+def subst_on_k_cell(template: Pattern, subst: Mapping[EVar, Pattern]) -> Pattern:
+    def subst_func(pat: Pattern) -> Pattern:
+        assert isinstance(pat, App)
+        assert pat.symbol == "Lbl'-LT-'k'-GT-'", pat.symbol
+        return substitute_vars(pat, subst)
+
+    return update_nested([0, 0, 1, 0], subst_func)(template)

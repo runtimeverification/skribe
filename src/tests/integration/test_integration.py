@@ -32,12 +32,14 @@ def test_run_wast(program: Path, tmp_path: Path) -> None:
         input_file=program,
         definition_dir=DEFINITION_DIR,
         check=True,
+        cmap=simulation.config_vars(),
+        pmap=simulation.CONFIG_VAR_PARSERS,
     )
 
 
 @pytest.mark.parametrize('test_file', SIMULATION_FILES, ids=str)
 def test_simulation(test_file: Path) -> None:
-    simulation.run(test_file, depth=None)
+    simulation.run(test_file, depth=None).check_returncode()
 
 
 @pytest.mark.parametrize('contract_dir', TEST_CONTRACT_DIRS, ids=str)

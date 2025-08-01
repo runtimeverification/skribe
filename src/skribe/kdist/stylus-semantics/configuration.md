@@ -1,42 +1,33 @@
 
 ```k
-requires "wasm-semantics/wasm.md"
+requires "evm.md"
 requires "auto-allocate.md"
-requires "data.md"
+requires "wasm-semantics/wasm.md"
+
+module STYLUS-TYPES
+    imports EVM-TYPES
+
+    syntax ModuleDecl
+    syntax AccountCode ::= ModuleDecl
+
+endmodule
 
 module CONFIGURATION
+    imports EVM
+    imports STYLUS-TYPES
     imports WASM
     imports WASM-AUTO-ALLOCATE
-    imports STYLUS-DATA
 
     configuration
       <stylus>
-        <k> .K </k>
-        <stylusStack> .StylusStack </stylusStack>
-        <stylus-output> .Bytes </stylus-output>
-
-        <stylus-callState>
-          <stylus-caller>    .Account </stylus-caller>
-          <stylus-callee>    .Account </stylus-callee>
-          <stylus-callData>  .Bytes   </stylus-callData>
-          <stylus-callValue> 0        </stylus-callValue>
-          <stylus-static>    false    </stylus-static>
-          <wasm/>
-          <contractModIdx> .Int </contractModIdx>
-        </stylus-callState>
-
-
-        <stylus-contracts>
-          <stylus-contract multiplicity="*" type="Map">
-            <stylus-contract-id>      0              </stylus-contract-id>
-            <stylus-contract-code>    #emptyModule() </stylus-contract-code>
-            <stylus-contract-storage> .Map           </stylus-contract-storage>
-          </stylus-contract>
-        </stylus-contracts>
-
-        <callStack> .List </callStack>
-        <interimStates> .List </interimStates>
-
+        <stylusvms>
+          <stylusvm multiplicity="?" type="Set">
+            <stylusStack> .StylusStack </stylusStack>
+            <wasm/>
+            <contractModIdx> .Int </contractModIdx>
+          </stylusvm>
+        </stylusvms>
+        <kevm/>
       </stylus>
 
     syntax StylusStack ::= List{StylusStackVal, ":"}  [symbol(stylusStackList)]
@@ -87,67 +78,29 @@ The `<callStack>` cell stores a list of previous contract execution states.
 These internal commands manages the call stack when calling and returning from a contract.
 
 ```k
-    syntax InternalCmd ::= "#pushCallStack"
- // ---------------------------------------
-    rule [pushCallStack]:
-         <k> #pushCallStack => .K ... </k>
-         <callStack> (.List => ListItem(CALLSTATE)) ... </callStack>
-         CALLSTATE:StylusCallStateCell
-      [priority(60)]
+    syntax CallStackVal ::= "{" CallStateCell "|" StylusvmCell "}"
 
-    syntax InternalCmd ::= "#popCallStack"
- // --------------------------------------
-    rule [popCallStack]:
-         <k> #popCallStack => .K ... </k>
-         <callStack> (ListItem(CALLSTATE:StylusCallStateCell) => .List) ... </callStack>
-         (_:StylusCallStateCell => CALLSTATE)
-      [priority(60)]
+    rule [pushCallStack-stylus]:
+        <k> #pushCallStack => .K ... </k>
+        <callStack> STACK => ListItem({ CALLSTATE | STYLUSVM }) STACK </callStack>
+        CALLSTATE:CallStateCell
+        STYLUSVM:StylusvmCell
+      [priority(40)]  // higher than the #pushCallStack in EVM
 
-    syntax InternalCmd ::= "#dropCallStack"
- // ---------------------------------------
-    rule [dropCallStack]:
-         <k> #dropCallStack => .K ... </k>
-         <callStack> (ListItem(_) => .List) ... </callStack>
-      [priority(60)]
+    rule [popCallStack-stylus]:
+        <k> #popCallStack => .K ... </k>
+        <callStack> ListItem({CALLSTATE | STYLUSVM}:CallStackVal) REST => REST </callStack>
+        (_:CallStateCell => CALLSTATE)
+        (_:StylusvmsCell => <stylusvms> STYLUSVM </stylusvms>)
 
-    syntax InternalCmd ::= "#resetCallstate"
+    syntax InternalCmd ::= "#resetCallState"
  // ---------------------------------------
-    rule [resetCallstate]:
-        <k> #resetCallstate => .K ... </k>
-        (_:StylusCallStateCell => <stylus-callState> <instrs> .K </instrs> ... </stylus-callState>)
+    rule [resetCallState]:
+        <k> #resetCallState => .K ... </k>
+        (_:CallStateCell => <callState> <program> .Bytes </program> ... </callState>)
+        (_:StylusvmsCell => <stylusvms> .Bag </stylusvms>)
       [preserves-definedness] // all constant configuration cells should be defined
 
-```
-
-## World State
-
-```k
-
-    syntax WorldSnapshot ::= "{" StylusContractsCellFragment "}"
- // --------------------------------------------------------
-
-    syntax InternalCmd ::= "#pushWorldState"
- // ----------------------------------------
-    rule [pushWorldState]:
-         <k> #pushWorldState => .K ... </k>
-         <interimStates> (.List => ListItem({ CONTRACTS })) ... </interimStates>
-         <stylus-contracts> CONTRACTS </stylus-contracts>
-      [priority(60)]
-
-    syntax InternalCmd ::= "#popWorldState"
- // ---------------------------------------
-    rule [popWorldState]:
-         <k> #popWorldState => .K ... </k>
-         <interimStates> (ListItem({ CONTRACTS }) => .List) ... </interimStates>
-         <stylus-contracts> _ =>  CONTRACTS </stylus-contracts>
-      [priority(60)]
-
-    syntax InternalCmd ::= "#dropWorldState"
- // ----------------------------------------
-    rule [dropWorldState]:
-         <k> #dropWorldState => .K ... </k>
-         <interimStates> (ListItem(_) => .List) ... </interimStates>
-      [priority(60)]
 ```
 
 ```k

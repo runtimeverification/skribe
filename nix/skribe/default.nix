@@ -4,7 +4,15 @@
   makeWrapper,
   callPackage,
 
+  clang,
+  cmake,
+  git,
   k,
+  boost,
+  mpfr,
+  openssl,
+  gmp,
+  secp256k1,
   which,
   rust-bin,
 
@@ -21,6 +29,14 @@ stdenv.mkDerivation {
   pname = "skribe";
   version = if (rev != null) then rev else "dirty";
   buildInputs = [
+    clang
+    cmake
+    git
+    boost
+    mpfr
+    openssl
+    gmp
+    secp256k1
     skribe-pyk
     k
   ];
