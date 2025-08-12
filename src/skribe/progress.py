@@ -9,13 +9,13 @@ if TYPE_CHECKING:
 
     from rich.progress import TaskID
 
-    from .contract import ContractBinding
+    from .contract import Method
 
 
 class FuzzProgress(Progress):
     fuzz_tasks: list[FuzzTask]
 
-    def __init__(self, bindings: Iterable[ContractBinding], max_examples: int):
+    def __init__(self, bindings: Iterable[Method], max_examples: int):
         super().__init__(
             TextColumn('[progress.description]{task.description}'),
             BarColumn(),
@@ -33,11 +33,11 @@ class FuzzProgress(Progress):
 
 
 class FuzzTask:
-    binding: ContractBinding
+    binding: Method
     task_id: TaskID
     progress: FuzzProgress
 
-    def __init__(self, binding: ContractBinding, task_id: TaskID, progress: FuzzProgress):
+    def __init__(self, binding: Method, task_id: TaskID, progress: FuzzProgress):
         self.binding = binding
         self.task_id = task_id
         self.progress = progress

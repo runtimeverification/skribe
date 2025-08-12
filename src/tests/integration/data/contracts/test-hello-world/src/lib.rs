@@ -26,7 +26,7 @@ sol_storage! {
 
 #[public]
 impl TestCounter {
-    pub fn init(&mut self, counter: Address) {
+    pub fn setUp(&mut self, counter: Address) {
         self.number.set(U256::from(123));
         self.counter.set(counter);
     }
@@ -35,29 +35,29 @@ impl TestCounter {
         assert_eq!(self.number.get(), U256::from(123));
     }
 
-    pub fn test_call_set_get_number(&mut self, x: U256) -> bool {
+    pub fn test_call_set_get_number(&mut self, x: U256) {
         let counter = ICounter::new(self.counter.get());
         counter.set_number(Call::new_in(self), x).unwrap();
 
-        counter.number(self).unwrap() == x
+        assert_eq!(counter.number(self).unwrap(), x);
     }
 
-    pub fn test_call_increment(&mut self, x: U256) -> bool {
+    pub fn test_call_increment(&mut self, x: U256) {
         if x >= U256::MAX {
-            return true;
+            return;
         }
 
         let counter = ICounter::new(self.counter.get());
         counter.set_number(Call::new_in(self), x).unwrap();
         counter.increment(Call::new_in(self)).unwrap();
 
-        counter.number(self).unwrap() == x + U256::from(1)
+        assert_eq!(counter.number(self).unwrap(), x + U256::from(1));
     }
 
-    pub fn test_add_comm(&self, first: U256, second: U256) -> bool {
+    pub fn test_add_comm(&self, first: U256, second: U256) {
         let a = first.checked_add(second);
         let b = second.checked_add(first);
 
-        a == b
+        assert_eq!(a, b);
     }
 }
