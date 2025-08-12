@@ -32,11 +32,6 @@ module SKRIBE
     imports SKRIBE-SYNTAX-COMMON
     imports SWITCH
 
-    configuration
-      <skribe>
-        <stylus/>
-      </skribe>
-
     rule [steps-empty]:
         <k> .Steps => .K </k>
 

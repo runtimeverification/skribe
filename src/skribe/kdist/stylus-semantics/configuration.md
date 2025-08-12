@@ -1,6 +1,6 @@
 
 ```k
-requires "evm.md"
+requires "kontrol.md"
 requires "auto-allocate.md"
 requires "wasm-semantics/wasm.md"
 
@@ -13,7 +13,7 @@ module STYLUS-TYPES
 endmodule
 
 module CONFIGURATION
-    imports EVM
+    imports FOUNDRY
     imports STYLUS-TYPES
     imports WASM
     imports WASM-AUTO-ALLOCATE
@@ -27,7 +27,7 @@ module CONFIGURATION
             <contractModIdx> .Int </contractModIdx>
           </stylusvm>
         </stylusvms>
-        <kevm/>
+        <foundry/>
       </stylus>
 
     syntax StylusStack ::= List{StylusStackVal, ":"}  [symbol(stylusStackList)]
