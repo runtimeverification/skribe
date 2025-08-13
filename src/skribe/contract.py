@@ -4,7 +4,7 @@ import json
 from dataclasses import dataclass
 from functools import cached_property, partial
 from pathlib import Path
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, TypeAlias
 
 from eth_abi.tools._strategies import get_abi_strategy
 from hypothesis import strategies
@@ -20,7 +20,7 @@ if TYPE_CHECKING:
     from hypothesis.strategies import SearchStrategy
 
 
-type Method = EVMContract.Method
+Method: TypeAlias = EVMContract.Method
 
 
 @dataclass
@@ -101,7 +101,7 @@ class StylusContract:
         return wasm_path.read_bytes()
 
 
-type ArbitrumContract = EVMContract | StylusContract
+ArbitrumContract: TypeAlias = EVMContract | StylusContract
 
 
 def setup_method(c: ArbitrumContract) -> Method | None:
