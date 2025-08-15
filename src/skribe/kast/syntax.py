@@ -50,5 +50,9 @@ def call_stylus(from_account: int | None, to_account: int | None, data: KInner, 
     return KApply('callStylus', [account(from_account), account(to_account), data, token(value)])
 
 
+def check_foundry_success() -> KInner:
+    return KApply('checkFoundrySuccess', [])
+
+
 def check_output(bs: bytes) -> KInner:
     return KApply('checkOutput', [token(bs)])

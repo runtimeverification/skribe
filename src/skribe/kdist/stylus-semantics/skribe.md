@@ -21,6 +21,7 @@ module SKRIBE-SYNTAX-COMMON
                   | setContract(id: Int, code: AccountCode, storage: Map)                        [symbol(setContract)]
                   | callStylus( from: Account, to: Account, callData: Bytes, callValue: Int)     [symbol(callStylus)]
                   | checkOutput( data: Bytes )                                                   [symbol(checkOutput)]
+                  | "checkFoundrySuccess"                                                        [symbol(checkFoundrySuccess)]
     syntax Steps ::= List{Step, ""}                    [symbol(skribeSteps)]
 
     syntax EthereumSimulation ::= Steps
@@ -91,6 +92,16 @@ module SKRIBE
     rule [checkOutput]:
         <k> checkOutput(EXPECTED) => .K ... </k>
         <output> EXPECTED </output>
+
+    // TODO: Lookup failed slot in Foundry Cheatcode account storage
+    rule [checkFoundrySuccess]:
+        <k> checkFoundrySuccess => .K ... </k>
+        <statusCode> STATUS </statusCode>
+        <isRevertExpected> REVERTEXPECTED </isRevertExpected>
+        <isOpcodeExpected> OPCODEEXPECTED </isOpcodeExpected>
+        <recordEvent> RECORDEVENT </recordEvent>
+        <isEventExpected> EVENTEXPECTED </isEventExpected>
+    requires foundry_success(STATUS, 0, REVERTEXPECTED, OPCODEEXPECTED, RECORDEVENT, EVENTEXPECTED)
 
     rule [callStylus-done-success]:
         <statusCode> EVMC_SUCCESS </statusCode>

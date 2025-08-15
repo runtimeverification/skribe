@@ -22,7 +22,15 @@ from pykwasm.wasm2kast import wasm2kast
 
 from skribe.contract import StylusContract, argument_strategy, is_foundry_test, setup_method
 
-from .kast.syntax import call_stylus, check_output, new_account, set_contract, set_exit_code, steps_of
+from .kast.syntax import (
+    call_stylus,
+    check_foundry_success,
+    check_output,
+    new_account,
+    set_contract,
+    set_exit_code,
+    steps_of,
+)
 from .progress import FuzzProgress
 from .simulation import CONFIG_VAR_PARSERS, call_data, config_vars
 from .utils import SkribeError, concrete_definition, parse_wasm_file, subst_on_k_cell
@@ -178,6 +186,7 @@ class Skribe:
         k_steps = [
             set_exit_code(1),
             call_stylus(TEST_CALLER_ID, TEST_CONTRACT_ID, CALLDATA, 0),
+            check_foundry_success(),
             set_exit_code(0),
         ]
         subst['K_CELL'] = steps_of(k_steps)
