@@ -72,7 +72,8 @@ class SkribeDefinition:
             The CompletedProcess of the interpreter
         """
         kore_term = kast_to_kore(self.kdefinition, pgm, sort=sort)
-        return self.krun.run_process(kore_term, **kwargs)
+        res = self.krun.run_process(kore_term, expand_macros=False, **kwargs)
+        return res
 
 
 concrete_definition = SkribeDefinition(kdist.get('stylus-semantics.llvm'))
@@ -108,4 +109,4 @@ def subst_on_k_cell(template: Pattern, subst: Mapping[EVar, Pattern]) -> Pattern
         assert pat.symbol == "Lbl'-LT-'k'-GT-'", pat.symbol
         return substitute_vars(pat, subst)
 
-    return update_nested([0, 0, 1, 0], subst_func)(template)
+    return update_nested([0, 1, 0, 0], subst_func)(template)

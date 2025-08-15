@@ -34,6 +34,7 @@ def test_run_wast(program: Path, tmp_path: Path) -> None:
         check=True,
         cmap=simulation.config_vars(),
         pmap=simulation.CONFIG_VAR_PARSERS,
+        no_expand_macros=True,
     )
 
 
@@ -46,7 +47,11 @@ def test_simulation(test_file: Path) -> None:
 def test_build_and_fuzz(contract_dir: Path) -> None:
 
     skribe = Skribe(concrete_definition)
-    skribe.build_stylus_contract(contract_dir=contract_dir)
+
+    if (contract_dir / 'foundry.toml').exists():
+        skribe.build_foundry_contract(contract_dir=contract_dir)
+    else:
+        skribe.build_stylus_contract(contract_dir=contract_dir)
 
     child_wasms = _read_config_file(skribe, contract_dir)
     errors = skribe.deploy_and_run(contract_dir, child_wasms, 100)

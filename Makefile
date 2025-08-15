@@ -18,6 +18,8 @@ build:
 
 # Semantics
 
+export K_OPTS=-Xmx16g
+
 kdist: kdist-build
 
 .PHONY: kdist-build
