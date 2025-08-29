@@ -23,17 +23,26 @@ contract CounterTest is Test {
         testNumber = 42;
         counter = new Counter();
     }
- 
+
+    function subtractFromTestNumber(uint256 x) public {
+        testNumber -= x;
+    }
+
     function test_NumberIs42() public {
         assertEq(testNumber, 42);
     }
  
-    /// forge-config: default.allow_internal_expect_revert = true
-    /// TODO implement failing tests
-    // function testRevert_Subtract43() public {
-    //     vm.expectRevert();
-    //     testNumber -= 43;
-    // }
+    function testRevert_Subtract43() public {
+        vm.expectRevert();
+        this.subtractFromTestNumber(43);
+    }
+
+    function test_Subtract(uint256 x) public {
+        if( x > 42 ) {
+            vm.expectRevert();
+        }
+        this.subtractFromTestNumber(x);
+    }
 
     function test_IncrementZero() public {
         assertEq(counter.number(), 0);
