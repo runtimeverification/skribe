@@ -35,17 +35,22 @@ module SKRIBE
 
     rule [steps-empty]:
         <k> .Steps => .K </k>
+        <stylusvms> .Bag </stylusvms>
 
     rule [steps-seq]:
         <k> S:Step SS:Steps => S ~> SS ... </k>
+        <stylusvms> .Bag </stylusvms>
 
     rule <k> #halt ~> S:Step SS:Steps => #halt ~> S ~> SS ... </k>
+        <stylusvms> .Bag </stylusvms>
 
     rule [setExitCode]:
         <k> setExitCode(I) => .K ... </k>
         <exit-code> _ => I </exit-code>
+        <stylusvms> .Bag </stylusvms>
 
     rule <k> newAccount(I) => #newAccount I ... </k>
+         <stylusvms> .Bag </stylusvms>
 
     rule [setBalance]:
         <k> setBalance(ACCT, BAL) => .K ... </k>
@@ -54,6 +59,7 @@ module SKRIBE
            <balance> _ => BAL </balance>
            ...
         </account>
+        <stylusvms> .Bag </stylusvms>
 
     rule [setContract-existing]:
         <k> setContract(ACCT, CODE, STORAGE) => .K ... </k>
@@ -63,6 +69,7 @@ module SKRIBE
            <storage> _ => STORAGE </storage>
            ...
         </account>
+        <stylusvms> .Bag </stylusvms>
       [priority(50)]
 
     rule [setContract-new]:
@@ -78,6 +85,7 @@ module SKRIBE
                 <nonce>            0                  </nonce>
               </account>
         )
+        <stylusvms> .Bag </stylusvms>
       [priority(55)]
 
 
@@ -88,10 +96,12 @@ module SKRIBE
             ...
         </k>
         <output> _ => .Bytes </output>
+        <stylusvms> .Bag </stylusvms>
 
     rule [checkOutput]:
         <k> checkOutput(EXPECTED) => .K ... </k>
         <output> EXPECTED </output>
+        <stylusvms> .Bag </stylusvms>
 
     // TODO: Lookup failed slot in Foundry Cheatcode account storage
     rule [checkFoundrySuccess]:
@@ -101,15 +111,18 @@ module SKRIBE
         <isOpcodeExpected> OPCODEEXPECTED </isOpcodeExpected>
         <recordEvent> RECORDEVENT </recordEvent>
         <isEventExpected> EVENTEXPECTED </isEventExpected>
+        <stylusvms> .Bag </stylusvms>
     requires foundry_success(STATUS, 0, REVERTEXPECTED, OPCODEEXPECTED, RECORDEVENT, EVENTEXPECTED)
 
     rule [callStylus-done-success]:
         <statusCode> EVMC_SUCCESS </statusCode>
         <k> (#halt => #popCallStack ~> #dropWorldState) ~> _:Step ... </k>
+        <stylusvms> .Bag </stylusvms>
 
     rule [callStylus-done-success-end]:
         <statusCode> EVMC_SUCCESS </statusCode>
         <k> #halt => #popCallStack ~> #dropWorldState </k>
+        <stylusvms> .Bag </stylusvms>
 
 endmodule
 ```
