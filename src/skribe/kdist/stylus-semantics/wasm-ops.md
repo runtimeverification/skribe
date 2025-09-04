@@ -14,13 +14,22 @@ module WASM-OPERATIONS
     syntax InternalCmd ::= "#initStylusVM" Account ModuleDecl     [symbol(#initStylusVM)]
  // ------------------------------------------------------------------------------------------------------------
     rule [#initStylusVM]:
-        <k> #initStylusVM _CONTRACT CODE => #waitWasm ~> #setContractModIdx ... </k>
+        <k> #initStylusVM _CONTRACT CODE => #waitWasm ... </k>
         <stylusvms>
           (.Bag => <stylusvm>
             <wasm>
               <instrs> initContractModule(CODE) </instrs>
+              <moduleRegistry> #quoteUnparseWasmString("vm_hooks") |-> 0 </moduleRegistry>
+              <nextModuleIdx> 1 </nextModuleIdx>
+              <moduleInstances>
+                <moduleInst>
+                  <modIdx> 0 </modIdx>
+                  ...
+                </moduleInst>
+              </moduleInstances>
               ...
             </wasm>
+            <contractModIdx> 1 </contractModIdx>
             ...
           </stylusvm>)
         </stylusvms>
@@ -31,14 +40,6 @@ module WASM-OPERATIONS
       => sequenceStmts(text2abstract(M .Stmts))
 
     rule initContractModule(M:ModuleDecl) => M              [owise]
-
-    syntax InternalCmd ::= "#setContractModIdx"
- // ------------------------------------------------------
-    rule [setContractModIdx]:
-        <k> #setContractModIdx => .K ... </k>
-        <contractModIdx> _ => NEXTIDX -Int 1 </contractModIdx>
-        <nextModuleIdx> NEXTIDX </nextModuleIdx>
-        <instrs> .K </instrs>
 
     syntax WasmStringToken ::= #unparseWasmString ( String )         [function, total, hook(STRING.string2token)]
                              | #quoteUnparseWasmString ( String )   [function, total]
