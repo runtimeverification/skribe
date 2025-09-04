@@ -17,6 +17,7 @@ module CONFIGURATION
     imports STYLUS-TYPES
     imports WASM
     imports WASM-AUTO-ALLOCATE
+    imports SWITCH-SYNTAX
 
     configuration
       <stylus>
@@ -54,6 +55,7 @@ module CONFIGURATION
         <instrs> pushStack(V) => .K ... </instrs>
         <stylusStack> S => V : S </stylusStack>
 
+
     rule [dropStack-instr]:
         <instrs> dropStack => .K ... </instrs>
         <stylusStack> _V : S => S </stylusStack>
@@ -64,9 +66,11 @@ module CONFIGURATION
         <k> #asWordFromStack => .K ... </k>
         <stylusStack> (BS => #asWord(BS)) : _REST </stylusStack>
 
+
     rule [asWordFromStack-instr]:
         <instrs> #asWordFromStack => .K ... </instrs>
         <stylusStack> (BS => #asWord(BS)) : _REST </stylusStack>
+        <k> #endWasm ... </k>
 
 ```
 
