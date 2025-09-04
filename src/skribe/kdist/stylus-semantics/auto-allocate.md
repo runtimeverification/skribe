@@ -38,6 +38,7 @@ module WASM-AUTO-ALLOCATE
           ...
         </moduleInst>
       requires notBool NAME in_keys(EXPORTS)
+      [owise]
 
     syntax String ::= wasmString2StringStripped ( WasmString ) [function]
                     | #stripQuotes ( String ) [function]
