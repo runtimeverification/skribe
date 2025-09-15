@@ -43,7 +43,17 @@ def test_simulation(test_file: Path) -> None:
     simulation.run(test_file, depth=None).check_returncode()
 
 
-@pytest.mark.parametrize('contract_dir', TEST_CONTRACT_DIRS, ids=str)
+BUILD_AND_FUZZ_TEST_FAIL = {
+    'test-foundry-simple': {
+        'test_failing_branch',
+        'test_assert_false',
+        'checkFail_assert_false',
+        'test_revert_branch',
+    }
+}
+
+
+@pytest.mark.parametrize('contract_dir', TEST_CONTRACT_DIRS, ids=lambda p: p.name)
 def test_build_and_fuzz(contract_dir: Path) -> None:
 
     skribe = Skribe(concrete_definition)
@@ -55,4 +65,8 @@ def test_build_and_fuzz(contract_dir: Path) -> None:
 
     child_wasms = _read_config_file(skribe, contract_dir)
     errors = skribe.deploy_and_run(contract_dir, child_wasms, 100)
-    assert not errors
+
+    if contract_dir.name in BUILD_AND_FUZZ_TEST_FAIL:
+        assert BUILD_AND_FUZZ_TEST_FAIL[contract_dir.name] == {e.test_name for e in errors}
+    else:
+        assert not errors

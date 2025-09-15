@@ -4,3 +4,9 @@
 [submodule "src/tests/integration/data/contracts/test-foundry-hello/lib/forge-std"]
 	path = src/tests/integration/data/contracts/test-foundry-hello/lib/forge-std
 	url = https://github.com/foundry-rs/forge-std
+[submodule "src/tests/integration/data/contracts/test-foundry-simple/lib/forge-std"]
+	path = src/tests/integration/data/contracts/test-foundry-simple/lib/forge-std
+	url = https://github.com/foundry-rs/forge-std
+[submodule "src/tests/integration/data/contracts/test-foundry-simple/lib/kontrol-cheatcodes"]
+	path = src/tests/integration/data/contracts/test-foundry-simple/lib/kontrol-cheatcodes
+	url = https://github.com/runtimeverification/kontrol-cheatcodes
