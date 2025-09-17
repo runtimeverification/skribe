@@ -31,7 +31,7 @@ endmodule
 module SKRIBE
     imports STYLUS
     imports SKRIBE-SYNTAX-COMMON
-    imports SWITCH
+    imports SKRIBE-ASSUME-CONCRETE
 
     rule [steps-empty]:
         <k> .Steps => .K </k>
@@ -123,6 +123,30 @@ module SKRIBE
         <statusCode> EVMC_SUCCESS </statusCode>
         <k> #halt => #popCallStack ~> #dropWorldState </k>
         <stylusvms> .Bag </stylusvms>
+
+endmodule
+```
+
+### Assumptions in concrete execution
+
+In Kontrol, `#assume` is implemented using the `ensures` clause, which only has an effect
+in symbolic execution. In Skribe, we also need concrete semantics for `#assume`.
+- `#assume(true)` acts as a no-op and execution continues normally.
+- `#assume(false)` ends execution immediately, treating it as a successful termination
+  (exit code 0), since the path guarded by the assumption is considered infeasible.
+
+```k
+module SKRIBE-ASSUME-CONCRETE [concrete]
+    imports STYLUS
+
+    rule [skribe-assume-concrete-true]:
+        <k> #assume(true) => .K ... </k>
+      [priority(35)]
+
+    rule [skribe-assume-concrete-false]:
+        <k> (#assume(false) ~> _) => .K </k>
+        <exit-code> _ => 0 </exit-code>
+      [priority(35)]
 
 endmodule
 ```
