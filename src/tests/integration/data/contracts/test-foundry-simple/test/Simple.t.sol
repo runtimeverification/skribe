@@ -60,7 +60,10 @@ contract AssertTest is Test, KontrolCheats {
             assert(false);
         }
     }
+}
 
+
+contract AssumeTest is Test, KontrolCheats {
     function test_assume(uint x) public {
         vm.assume(10 < x);
         assert(5 < x);

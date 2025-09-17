@@ -213,14 +213,10 @@ class Skribe:
 
         if id is None:
             tests = test_methods
-            print(f'Discovered {len(tests)} test(s):')
         else:
             tests = [b for b in test_methods if b.name == id]
             if not tests:
                 raise KeyError(f'Test function {id!r} not found.')
-            print('Selected a single test function:')
-
-        print()
 
         return tests
 
@@ -230,31 +226,45 @@ class Skribe:
 
         is_foundry = (contract_dir / 'foundry.toml').exists()
 
-        contract: ArbitrumContract
+        test_contracts: list[ArbitrumContract]
         if is_foundry:
             foundry = Foundry(contract_dir)
             test_contracts = [c for c in foundry.contracts.values() if is_foundry_test(c)]
-            assert len(test_contracts) == 1, f'Multiple test contracts are not supported yet: {test_contracts}'
-            contract = test_contracts[0]
-            bytecode = bytes.fromhex(contract.deployed_bytecode)
-            contract_kast: KInner = bytesToken(bytecode)
         else:
-            contract = StylusContract(cargo_bin=self._cargo_bin, contract_dir=contract_dir)
-            contract_kast = wasm2kast(BytesIO(contract.deployed_bytecode))
+            contract_ = StylusContract(cargo_bin=self._cargo_bin, contract_dir=contract_dir)
+            test_contracts = [contract_]
 
         child_wasm_kasts = []
+        child_wasm_kasts = [parse_wasm_file(p) for p in child_wasms]
+
+        errors: list[FuzzError] = []
+        for contract in test_contracts:
+            errors += self.deploy_and_run_contract(contract, child_wasm_kasts, max_examples, id)
+
+        return errors
+
+    def deploy_and_run_contract(
+        self, contract: ArbitrumContract, child_wasm_kasts: list[KInner], max_examples: int, id: str | None = None
+    ) -> list[FuzzError]:
+
+        contract_kast: KInner
+        if isinstance(contract, StylusContract):
+            contract_kast = wasm2kast(BytesIO(contract.deployed_bytecode))
+        else:
+            bytecode = bytes.fromhex(contract.deployed_bytecode)
+            contract_kast = bytesToken(bytecode)
+
         setup = setup_method(contract)
-        if setup:
-            if len(setup.inputs) != len(child_wasms):
-                raise TypeError(f'Expected {len(setup.inputs)} children, found {len(child_wasms)}')
-            child_wasm_kasts = [parse_wasm_file(p) for p in child_wasms]
+        expected_len = 0 if setup is None else len(setup.inputs)
+        if expected_len != len(child_wasm_kasts):
+            raise TypeError(f'Expected {expected_len} children, found {len(child_wasm_kasts)}')
 
         init_config = self.deploy_test(contract_kast, setup is not None, child_wasm_kasts)
         template_conf, init_subst = split_config_from(init_config)
 
         tests = self.select_tests(contract, id)
-        failed: list[FuzzError] = []
-        with FuzzProgress(tests, max_examples) as progress:
+        errors: list[FuzzError] = []
+        with FuzzProgress(contract._name, tests, max_examples) as progress:
             for task in progress.fuzz_tasks:
                 try:
                     task.start()
@@ -262,9 +272,9 @@ class Skribe:
                     task.end()
                 except FuzzError as e:
                     task.fail()
-                    failed.append(e)
+                    errors.append(e)
 
-        return failed
+        return errors
 
 
 class KometFuzzHandler(KFuzzHandler):
