@@ -97,6 +97,7 @@ module SKRIBE
         </k>
         <output> _ => .Bytes </output>
         <stylusvms> .Bag </stylusvms>
+        <origin> _ => FROM </origin>
 
     rule [checkOutput]:
         <k> checkOutput(EXPECTED) => .K ... </k>
