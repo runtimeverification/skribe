@@ -49,6 +49,8 @@ BUILD_AND_FUZZ_TEST_FAIL = {
         'AssertTest.test_assert_false',
         'AssertTest.checkFail_assert_false',
         'AssertTest.test_revert_branch',
+        'AssumeTest.testFail_assume_true',
+        'AssumeTest.test_assume_false',
     }
 }
 
@@ -67,6 +69,6 @@ def test_build_and_fuzz(contract_dir: Path) -> None:
     errors = skribe.deploy_and_run(contract_dir, child_wasms, 100)
 
     if contract_dir.name in BUILD_AND_FUZZ_TEST_FAIL:
-        assert BUILD_AND_FUZZ_TEST_FAIL[contract_dir.name] == {e.test_name for e in errors}
+        assert BUILD_AND_FUZZ_TEST_FAIL[contract_dir.name] == {e.description for e in errors}
     else:
         assert not errors
