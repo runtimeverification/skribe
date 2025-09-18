@@ -29,7 +29,11 @@ def _exec_build(dir_path: Path | None) -> None:
     dir_path = Path.cwd() if dir_path is None else dir_path
 
     skribe = Skribe(concrete_definition)
-    skribe.build_stylus_contract(contract_dir=dir_path)
+
+    if (dir_path / 'foundry.toml').exists():
+        skribe.build_foundry_contract(contract_dir=dir_path)
+    else:
+        skribe.build_stylus_contract(contract_dir=dir_path)
 
     exit(0)
 
@@ -70,7 +74,7 @@ def _exec_run(dir_path: Path | None, id: str | None, max_examples: int) -> None:
     err_console.print(f'[bold red]{len(failed)}[/bold red] test(s) failed:')
 
     for err in failed:
-        err_console.print(f'  {err.test_name} {err.counterexample}')
+        err_console.print(f'  {err.description} {err.counterexample}')
 
     exit(1)
 

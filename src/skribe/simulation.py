@@ -41,7 +41,7 @@ def config_vars() -> dict[str, str]:
     return {
         'USEGAS': '\\dv{SortBool{}}("false")',
         'CHAINID': '\\dv{SortInt{}}("0")',
-        'SCHEDULE': "LblSHANGHAI'Unds'EVM{}()",
+        'SCHEDULE': "LblCANCUN'Unds'EVM{}()",
         'MODE': 'LblNORMAL{}()',
     }
 
