@@ -264,7 +264,7 @@ class Skribe:
 
         tests = self.select_tests(contract, id)
         errors: list[FuzzError] = []
-        with FuzzProgress(contract._name, tests, max_examples) as progress:
+        with FuzzProgress(tests, max_examples) as progress:
             for task in progress.fuzz_tasks:
                 try:
                     task.start()
@@ -304,15 +304,16 @@ class KometFuzzHandler(KFuzzHandler):
         assert isinstance(calldata_kast, KToken)
         calldata = pretty_bytes(calldata_kast)
         decoded = decode(self.task.binding.arg_types, calldata[4:])
-        raise FuzzError(self.task.binding.name, decoded)
+        description = f'{self.task.binding.contract_name}.{self.task.binding.name}'
+        raise FuzzError(description, decoded)
 
 
 class FuzzError(SkribeError):
-    test_name: str
+    description: str
     counterexample: tuple[Any, ...]
 
-    def __init__(self, test_name: str, counterexample: tuple[KInner, ...]):
-        self.test_name = test_name
+    def __init__(self, description: str, counterexample: tuple[KInner, ...]):
+        self.description = description
         self.counterexample = counterexample
 
 

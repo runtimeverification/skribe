@@ -15,7 +15,7 @@ if TYPE_CHECKING:
 class FuzzProgress(Progress):
     fuzz_tasks: list[FuzzTask]
 
-    def __init__(self, contract_name: str, bindings: Iterable[Method], max_examples: int):
+    def __init__(self, bindings: Iterable[Method], max_examples: int):
         super().__init__(
             TextColumn('[progress.description]{task.description}'),
             BarColumn(),
@@ -28,7 +28,7 @@ class FuzzProgress(Progress):
 
         # Add all tests to the progress display before running them
         for binding in bindings:
-            description = f'{contract_name}.{binding.name}'
+            description = f'{binding.contract_name}.{binding.name}'
             task_id = self.add_task(description, total=max_examples, start=False, status='Waiting')
             self.fuzz_tasks.append(FuzzTask(binding, task_id, self))
 

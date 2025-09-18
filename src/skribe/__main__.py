@@ -74,7 +74,7 @@ def _exec_run(dir_path: Path | None, id: str | None, max_examples: int) -> None:
     err_console.print(f'[bold red]{len(failed)}[/bold red] test(s) failed:')
 
     for err in failed:
-        err_console.print(f'  {err.test_name} {err.counterexample}')
+        err_console.print(f'  {err.description} {err.counterexample}')
 
     exit(1)
 

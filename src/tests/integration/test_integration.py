@@ -45,10 +45,10 @@ def test_simulation(test_file: Path) -> None:
 
 BUILD_AND_FUZZ_TEST_FAIL = {
     'test-foundry-simple': {
-        'test_failing_branch',
-        'test_assert_false',
-        'checkFail_assert_false',
-        'test_revert_branch',
+        'AssertTest.test_failing_branch',
+        'AssertTest.test_assert_false',
+        'AssertTest.checkFail_assert_false',
+        'AssertTest.test_revert_branch',
     }
 }
 
