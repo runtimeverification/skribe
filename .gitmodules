@@ -10,3 +10,6 @@
 [submodule "src/tests/integration/data/contracts/test-foundry-simple/lib/kontrol-cheatcodes"]
 	path = src/tests/integration/data/contracts/test-foundry-simple/lib/kontrol-cheatcodes
 	url = https://github.com/runtimeverification/kontrol-cheatcodes
+[submodule "src/tests/integration/data/contracts/test-stylus-from-foundry/lib/forge-std"]
+	path = src/tests/integration/data/contracts/test-stylus-from-foundry/lib/forge-std
+	url = https://github.com/foundry-rs/forge-std
