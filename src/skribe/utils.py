@@ -1,28 +1,40 @@
 from __future__ import annotations
 
 from functools import cached_property
+from io import BytesIO
+from pathlib import Path
 from typing import TYPE_CHECKING
 
+from eth_abi import decode
+from pyk.kast.inner import KSort, KToken
 from pyk.kast.outer import read_kast_definition
+from pyk.kast.prelude.bytes import bytesToken, pretty_bytes
+from pyk.kast.prelude.string import pretty_string
 from pyk.kdist import kdist
-from pyk.konvert import kast_to_kore
+from pyk.konvert import kast_to_kore, kore_to_kast
 from pyk.kore.manip import substitute_vars
+from pyk.kore.parser import KoreParser
 from pyk.kore.syntax import App
 from pyk.ktool.kompile import DefinitionInfo
 from pyk.ktool.kprove import KProve
 from pyk.ktool.krun import KRun
+from pyk.utils import abs_or_rel_to
 from pykwasm.wasm2kast import wasm2kast
+
+from skribe.kast.syntax import pyk_hook_result
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Mapping
-    from pathlib import Path
     from subprocess import CompletedProcess
-    from typing import Any
+    from typing import Any, Final
 
-    from pyk.kast.inner import KInner, KSort
+    from pyk.kast.inner import KInner
     from pyk.kast.outer import KDefinition
     from pyk.kore.syntax import EVar, Pattern
     from pyk.ktool.kompile import KompileBackend
+
+
+EXIT_CODE_PYK_HOOK: Final = 2
 
 
 class SkribeError(RuntimeError): ...
@@ -74,6 +86,67 @@ class SkribeDefinition:
         kore_term = kast_to_kore(self.kdefinition, pgm, sort=sort)
         res = self.krun.run_process(kore_term, expand_macros=False, **kwargs)
         return res
+
+    def krun_with_kast_with_pyk_hooks(
+        self, pgm: KInner, hooks: PykHooks, sort: KSort | None = None, **kwargs: Any
+    ) -> CompletedProcess:
+        proc_res = self.krun_with_kast(pgm, sort, **kwargs)
+        if proc_res.returncode != EXIT_CODE_PYK_HOOK:
+            return proc_res
+
+        kore_term = KoreParser(proc_res.stdout).pattern()
+
+        kwargs['pmap'] = None
+        kwargs['cmap'] = None
+        return self.krun_term_with_pyk_hooks(kore_term, hooks, **kwargs)
+
+    def krun_term_with_pyk_hooks(self, kore_term: Pattern, hooks: PykHooks, **kwargs: Any) -> CompletedProcess:
+
+        apply_hooks_k_cell = update_nested([0, 1, 0, 0], lambda pat: hooks(pat, self.kdefinition))
+        while True:
+            kore_term = apply_hooks_k_cell(kore_term)
+            proc_res = self.krun.run_process(kore_term, term=True, expand_macros=False, **kwargs)
+            if proc_res.returncode != EXIT_CODE_PYK_HOOK:
+                return proc_res
+
+            kore_term = KoreParser(proc_res.stdout).pattern()
+
+
+class PykHooks:
+
+    project_root: Path
+
+    def __init__(self, project_root: Path):
+        self.project_root = project_root
+
+    def __call__(self, kore_term: Pattern, definition: KDefinition) -> Pattern:
+        def apply_func(pat: Pattern) -> Pattern:
+            if isinstance(pat, App) and pat.symbol == "Lblskribe'Stop'pykHook":
+                func_sig = kore_to_kast(definition, pat.args[0])
+                args = kore_to_kast(definition, pat.args[1])
+
+                assert isinstance(func_sig, KToken)
+                func_sig_str = pretty_string(func_sig)
+                result: KInner
+                match func_sig_str:
+                    case 'readFileBinary(string)':
+                        assert isinstance(args, KToken)
+                        decoded_args = decode(types=('string',), data=pretty_bytes(args))
+                        file_path = abs_or_rel_to(Path(decoded_args[0]), self.project_root)
+                        content = file_path.read_bytes()
+                        result = bytesToken(content)
+                    case 'parseWasmBytecode(KBytes)':
+                        assert isinstance(args, KToken)
+                        bytecode = pretty_bytes(args)
+                        result = wasm2kast(BytesIO(bytecode))
+                    case _:
+                        raise ValueError(f'Unknown function {func_sig_str}')
+
+                return kast_to_kore(definition, pyk_hook_result(func_sig_str, result), KSort('KItem'))
+
+            return pat
+
+        return kore_term.bottom_up(apply_func)
 
 
 concrete_definition = SkribeDefinition(kdist.get('stylus-semantics.llvm'))

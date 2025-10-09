@@ -33,7 +33,7 @@ from .kast.syntax import (
 )
 from .progress import FuzzProgress
 from .simulation import CONFIG_VAR_PARSERS, call_data, config_vars
-from .utils import SkribeError, concrete_definition, parse_wasm_file, subst_on_k_cell
+from .utils import PykHooks, SkribeError, parse_wasm_file, subst_on_k_cell
 
 if TYPE_CHECKING:
     from collections.abc import Mapping
@@ -153,8 +153,13 @@ class Skribe:
         )
 
         # Run the steps and grab the resulting config as a starting place to call transactions
-        proc_res = self.definition.krun_with_kast(
-            steps, sort=KSort('EthereumSimulation'), output=KRunOutput.KORE, cmap=config_vars(), pmap=CONFIG_VAR_PARSERS
+        proc_res = self.definition.krun_with_kast_with_pyk_hooks(
+            steps,
+            sort=KSort('EthereumSimulation'),
+            output=KRunOutput.KORE,
+            cmap=config_vars(),
+            pmap=CONFIG_VAR_PARSERS,
+            hooks=PykHooks(self.contract_dir),
         )
         if proc_res.returncode:
             raise InitializationError
