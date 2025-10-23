@@ -98,14 +98,6 @@ These internal commands manages the call stack when calling and returning from a
         (_:CallStateCell => CALLSTATE)
         (_:StylusvmsCell => <stylusvms> STYLUSVM </stylusvms>)
 
-    syntax InternalCmd ::= "#resetCallState"
- // ---------------------------------------
-    rule [resetCallState]:
-        <k> #resetCallState => .K ... </k>
-        (_:CallStateCell => <callState> <program> .Bytes </program> ... </callState>)
-        (_:StylusvmsCell => <stylusvms> .Bag </stylusvms>)
-      [preserves-definedness] // all constant configuration cells should be defined
-
 ```
 
 ```k
