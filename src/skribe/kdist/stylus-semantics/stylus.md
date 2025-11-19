@@ -133,7 +133,7 @@ Wasm-based VM.
          => #initStylusVM ACCTCODE WASMMOD ~> #executeWasm #quoteUnparseWasmString("user_entrypoint")
             ...
         </k>
-        <parsedWasmCache> ... BYTES |-> WASMMOD ... </parsedWasmCache>
+        <parsedWasmCache> ... ACCTCODE |-> WASMMOD ... </parsedWasmCache>
       requires isStylusBytecode(BYTES)
       [priority(30)]
 
@@ -205,10 +205,9 @@ value once the result is received).
         </k>
         <account>
           <acctID> ACCTCODE </acctID>
-          <code> BYTES:Bytes </code>
           ...
         </account>
-        <parsedWasmCache> CACHE => CACHE [ BYTES <- WASMMOD ] </parsedWasmCache>
+        <parsedWasmCache> CACHE => CACHE [ ACCTCODE <- WASMMOD ] </parsedWasmCache>
 
 endmodule
 ```
