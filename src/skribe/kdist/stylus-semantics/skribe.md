@@ -189,6 +189,19 @@ module SKRIBE-CHEAT-CODES
 
     rule selector ( "readFileBinary(string)" ) => 384662468
 
+    rule [skribe.cheatcode.call.readFile]:
+        <k> #cheatcode_call SELECTOR ARGS
+         => #pykHook "readFile(string)" ARGS
+            ...
+        </k>
+      requires SELECTOR ==Int selector( "readFile(string)" )
+
+    rule [skribe.pykHookResult.readFile]:
+        <k> #pykHookResult "readFile(string)" ABI_ENCODED_CONTENT
+         => .K ...
+        </k>
+        <output> _ => ABI_ENCODED_CONTENT </output>
+
     rule [skribe.cheatcode.call.readFileBinary]:
         <k> #cheatcode_call SELECTOR ARGS
          => #pykHook "readFileBinary(string)" ARGS
@@ -197,13 +210,10 @@ module SKRIBE-CHEAT-CODES
       requires SELECTOR ==Int selector( "readFileBinary(string)" )
 
     rule [skribe.pykHookResult.readFileBinary]:
-        <k> #pykHookResult "readFileBinary(string)" DATA
+        <k> #pykHookResult "readFileBinary(string)" ABI_ENCODED_CONTENT
          => .K ...
         </k>
-        <output> _ => 
-            #buf(32, 32) +Bytes #buf(32, lengthBytes(DATA)) +Bytes DATA
-            +Bytes #buf ( ( ( notMaxUInt5 &Int ( lengthBytes(DATA) +Int maxUInt5 ) ) -Int lengthBytes(DATA) ) , 0 )
-        </output>
+        <output> _ => ABI_ENCODED_CONTENT </output>
 
 endmodule
 ```

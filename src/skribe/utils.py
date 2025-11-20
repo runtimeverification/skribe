@@ -5,7 +5,7 @@ from io import BytesIO
 from pathlib import Path
 from typing import TYPE_CHECKING
 
-from eth_abi import decode
+from eth_abi import decode, encode
 from pyk.kast.inner import KSort, KToken
 from pyk.kast.outer import read_kast_definition
 from pyk.kast.prelude.bytes import bytesToken, pretty_bytes
@@ -129,12 +129,20 @@ class PykHooks:
                 func_sig_str = pretty_string(func_sig)
                 result: KInner
                 match func_sig_str:
+                    case 'readFile(string)':
+                        assert isinstance(args, KToken)
+                        decoded_args = decode(types=('string',), data=pretty_bytes(args))
+                        file_path = abs_or_rel_to(Path(decoded_args[0]), self.project_root)
+                        txt_content = file_path.read_text()
+                        abi_encoded_content = encode(types=('string',), args=(txt_content,))
+                        result = bytesToken(abi_encoded_content)
                     case 'readFileBinary(string)':
                         assert isinstance(args, KToken)
                         decoded_args = decode(types=('string',), data=pretty_bytes(args))
                         file_path = abs_or_rel_to(Path(decoded_args[0]), self.project_root)
-                        content = file_path.read_bytes()
-                        result = bytesToken(content)
+                        bin_content = file_path.read_bytes()
+                        abi_encoded_content = encode(types=('bytes',), args=(bin_content,))
+                        result = bytesToken(abi_encoded_content)
                     case 'parseWasmBytecode(KBytes)':
                         assert isinstance(args, KToken)
                         bytecode = pretty_bytes(args)
