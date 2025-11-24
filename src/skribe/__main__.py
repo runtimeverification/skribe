@@ -28,12 +28,9 @@ def _exec_build(dir_path: Path | None) -> None:
     """
     dir_path = Path.cwd() if dir_path is None else dir_path
 
-    skribe = Skribe(concrete_definition)
+    skribe = Skribe(concrete_definition, dir_path)
 
-    if (dir_path / 'foundry.toml').exists():
-        skribe.build_foundry_contract(contract_dir=dir_path)
-    else:
-        skribe.build_stylus_contract(contract_dir=dir_path)
+    skribe.build_contract()
 
     exit(0)
 
@@ -58,12 +55,12 @@ def _exec_run(dir_path: Path | None, id: str | None, max_examples: int) -> None:
 
     dir_path = Path.cwd() if dir_path is None else dir_path
 
-    skribe = Skribe(concrete_definition)
+    skribe = Skribe(concrete_definition, dir_path)
 
     child_wasms = _read_config_file(skribe, dir_path)
 
     try:
-        failed = skribe.deploy_and_run(contract_dir=dir_path, child_wasms=child_wasms, id=id, max_examples=max_examples)
+        failed = skribe.deploy_and_run(child_wasms=child_wasms, id=id, max_examples=max_examples)
     except InitializationError:
         err_console.print('[bold red]Initialization failed[/bold red]')
         exit(1)
