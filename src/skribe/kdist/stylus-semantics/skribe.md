@@ -32,6 +32,7 @@ module SKRIBE
     imports STYLUS
     imports SKRIBE-SYNTAX-COMMON
     imports SKRIBE-ASSUME-CONCRETE
+    imports SKRIBE-CHEAT-CODES
 
     rule [steps-empty]:
         <k> .Steps => .K </k>
@@ -148,6 +149,44 @@ module SKRIBE-ASSUME-CONCRETE [concrete]
         <k> (#assume(false) ~> _) => .K </k>
         <exit-code> _ => 0 </exit-code>
       [priority(35)]
+
+endmodule
+```
+
+### Pyk Hooks for Cheatcodes
+
+```k
+module SKRIBE-CHEAT-CODES
+    imports STYLUS
+    imports SKRIBE-SYNTAX-COMMON
+
+    rule selector ( "readFileBinary(string)" ) => 384662468
+
+    rule [skribe.cheatcode.call.readFile]:
+        <k> #cheatcode_call SELECTOR ARGS
+         => #pykHook "readFile(string)" ARGS
+            ...
+        </k>
+      requires SELECTOR ==Int selector( "readFile(string)" )
+
+    rule [skribe.pykHookResult.readFile]:
+        <k> #pykHookResult "readFile(string)" ABI_ENCODED_CONTENT
+         => .K ...
+        </k>
+        <output> _ => ABI_ENCODED_CONTENT </output>
+
+    rule [skribe.cheatcode.call.readFileBinary]:
+        <k> #cheatcode_call SELECTOR ARGS
+         => #pykHook "readFileBinary(string)" ARGS
+            ...
+        </k>
+      requires SELECTOR ==Int selector( "readFileBinary(string)" )
+
+    rule [skribe.pykHookResult.readFileBinary]:
+        <k> #pykHookResult "readFileBinary(string)" ABI_ENCODED_CONTENT
+         => .K ...
+        </k>
+        <output> _ => ABI_ENCODED_CONTENT </output>
 
 endmodule
 ```
