@@ -3,11 +3,13 @@
 requires "configuration.md"
 requires "switch.md"
 requires "hostfuns.md"
+requires "memory-opt.md"
 
 module STYLUS
     imports CONFIGURATION
     imports HOSTFUNS
     imports SWITCH
+    imports WASM-MEMORY-OPT
 ```
 
 ## Stylus Contract Creation
