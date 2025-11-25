@@ -235,6 +235,44 @@ Equivalent to the [`SLOAD`](https://www.evm.codes/#54) opcode in EVM.
 
 ```
 
+## static_call_contract
+
+```k
+    rule [hostCall-static-call-contract]:
+        <instrs> hostCall ( "vm_hooks" , "static_call_contract" , [ i32  i32  i32  i64  i32  .ValTypes ] -> [ i32  .ValTypes ] )
+              => pushStack(RET_LEN_PTR)
+              ~> #memLoad(DATA_PTR, DATA_LEN)
+              ~> #memLoad(CONTRACT_PTR, 20)
+              ~> #asWordFromStack
+              ~> hostCallAux("vm_hooks", "static_call_contract")
+                 ...
+        </instrs>
+        <locals>
+          0 |-> < i32 > CONTRACT_PTR
+          1 |-> < i32 > DATA_PTR
+          2 |-> < i32 > DATA_LEN
+          3 |-> < i64 > _GAS
+          4 |-> < i32 > RET_LEN_PTR
+        </locals>
+        <k> #endWasm ... </k>
+
+    rule [hostCallAux-static-call-contract]:
+        <instrs> hostCallAux ( "vm_hooks" , "static_call_contract" )
+              => #waitCommands
+                 ...
+        </instrs>
+        <k> (.K => #accessAccounts ACCTTO
+                ~> #checkCall ACCTFROM 0
+                ~> #call ACCTFROM ACCTTO ACCTTO 0 0 DATA false
+                ~> #returnStylus RET_LEN_PTR
+            ) 
+          ~> #endWasm ... 
+        </k>
+        <stylusStack> ACCTTO : (DATA : RET_LEN_PTR : S) => S </stylusStack>
+        <id> ACCTFROM </id>
+
+```
+
 ## read_return_data
 
 ```k
