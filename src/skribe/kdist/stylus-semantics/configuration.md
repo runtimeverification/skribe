@@ -29,6 +29,7 @@ module CONFIGURATION
           </stylusvm>
         </stylusvms>
         <foundry/>
+        <parsedWasmCache> .Map </parsedWasmCache> // ACCTID:Int |-> WASMMOD:ModuleDecl
       </stylus>
 
     syntax StylusStack ::= List{StylusStackVal, ":"}  [symbol(stylusStackList)]

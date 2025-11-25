@@ -9,8 +9,57 @@ module STYLUS
     imports HOSTFUNS
     imports SWITCH
 ```
+
+## Stylus Contract Creation
+
+These rules extend the EVM semantics to support creating Stylus (Wasm-based)
+contracts using the standard EVM `CREATE/CREATE2` instruction.
+
+Stylus contracts are identified by a special 4-byte discriminant at the
+beginning of their bytecode (`0xeff00000`). The helper function
+`isStylusBytecode(Bytes)` checks for this prefix.
+
+```k
+    syntax Bytes ::= "#stylusDiscriminant"      [macro]
+    rule #stylusDiscriminant => b"\xef\xf0\x00\x00"
+
+    syntax Bool ::= isStylusBytecode(Bytes)          [function, total]
+ // ------------------------------------------------------------------
+    rule isStylusBytecode(BS) => substrBytes(BS, 0, 4) ==K #stylusDiscriminant requires lengthBytes(BS) >Int 4
+    rule isStylusBytecode(_)  => false                                         [owise]
+
+```
+
+When a contract creation output (`OUT`) starts with this discriminant, the rule `mkCodeDeposit-stylus` overrides
+the standard EVM `#mkCodeDeposit` behavior. The rule triggers a code deposit sequence followed by a call to
+`#parseAndCacheWasm`, which invokes a Pyk hook to parse and cache the Wasm module corresponding to the new contract.
+
+```k
+    // TODO: Add further bytecode validation for Stylus Wasm modules
+    rule [mkCodeDeposit-stylus]:
+        <k> #mkCodeDeposit ACCT
+         => Gcodedeposit < SCHED > *Int lengthBytes(OUT) ~> #deductGas
+         ~> #finishCodeDeposit ACCT OUT
+         ~> #parseAndCacheWasm ACCT
+            ...
+        </k>
+        <schedule> SCHED </schedule>
+        <output> OUT => .Bytes </output>
+      requires isStylusBytecode(OUT)
+      [priority(30)]
+
+```
+
+## Stylus Contract Calls
+
+These rules extend the EVM call semantics to support executing Stylus contracts whose code is represented as Wasm AST (`ModuleDecl`).
+
 - `#call` retrieves the contract's code and initiates execution. This is equivalent to `#call` in evm-semantics.
-- `#callWithWasm` executes a contract call from given Wasm code. This is analogous to `#callWithCode` in evm-semantics, but tailored for Wasm contracts
+- `#callWithWasm` executes a contract call from given Wasm code. This is analogous to `#callWithCode` in evm-semantics.
+
+The constructs `#callWithWasm` and `#mkCallWasm` are only used when the contract’s code is already stored as a parsed
+Wasm Module AST. For contracts whose code is stored as raw Stylus Wasm bytecode, calls are still dispatched using the
+normal EVM call pipeline (`#call`, `#callWithCode`, `#mkCall`), which will internally handle Stylus detection and execution setup.
 
 ```k
     syntax InternalCmd ::= "#callWithWasm" Int Int Int ModuleDecl Int Int Bytes Bool
@@ -71,6 +120,22 @@ module STYLUS
           ...
         </wasm>
         <contractModIdx> MODIDX:Int </contractModIdx>
+
+```
+
+This rule overrides the standard EVM execution path for contracts whose code is identified as Stylus (Wasm) bytecode.
+It intercepts the normal `#loadProgram ~> #initVM ~> #execute` sequence and redirects it to initialize and execute a
+Wasm-based VM.
+
+```k
+    rule [stylus-loadProgram.initVM.execute]:
+        <k> (#loadProgram BYTES ~> #initVM ~> #precompiled?(ACCTCODE, _) ~> #execute)
+         => #initStylusVM ACCTCODE WASMMOD ~> #executeWasm #quoteUnparseWasmString("user_entrypoint")
+            ...
+        </k>
+        <parsedWasmCache> ... ACCTCODE |-> WASMMOD ... </parsedWasmCache>
+      requires isStylusBytecode(BYTES)
+      [priority(30)]
 
     // TODO return the correct code size for Stylus (Wasm) contracts
     rule [extcodesize-wasm]:
