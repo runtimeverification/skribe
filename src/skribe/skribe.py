@@ -33,7 +33,7 @@ from .kast.syntax import (
 )
 from .progress import FuzzProgress
 from .simulation import CONFIG_VAR_PARSERS, call_data, config_vars
-from .utils import PykHooks, SkribeError, concrete_definition, parse_wasm_file, subst_on_k_cell
+from .utils import PykHooks, SkribeError, subst_on_k_cell
 
 if TYPE_CHECKING:
     from collections.abc import Mapping
@@ -102,13 +102,12 @@ class Skribe:
                 check=True,
             )
 
-    def deploy_test(self, contract: KInner, setup: bool, child_contracts: list[KInner]) -> KInner:
+    def deploy_test(self, contract: KInner, setup: bool) -> KInner:
         """Takes a Stylus contract and its dependencies as kast terms and deploys them in a fresh configuration.
 
         Args:
             contract: The test contract to deploy, represented as a kast term.
             setup: Whether to initialize the contract by calling its 'setUp' function after deployment.
-            child_contracts: The child contracts to deploy, represented as kast terms.
 
         Returns:
             A configuration with the contract deployed.
@@ -124,19 +123,10 @@ class Skribe:
             if not setup:
                 return ()
 
-            # Set up the steps that will deploy the child contracts
-            # Contract IDs 0 and 1 are reserved
-            deploy_children = [set_contract(i, c, {}) for i, c in enumerate(child_contracts, start=2)]
-
-            data = call_data(
-                'setUp',
-                ['address'] * len(child_contracts),
-                [i.to_bytes(length=20, byteorder='big') for i in range(2, 2 + len(child_contracts))],
-            )
+            setup_call_data = call_data('setUp', [], [])
 
             return (
-                *deploy_children,
-                call_stylus(TEST_CALLER_ID, TEST_CONTRACT_ID, bytesToken(data), 0),
+                call_stylus(TEST_CALLER_ID, TEST_CONTRACT_ID, bytesToken(setup_call_data), 0),
                 check_output(EMPTY_DATA),
             )
 
@@ -230,9 +220,7 @@ class Skribe:
 
         return tests
 
-    def deploy_and_run(
-        self, child_wasms: tuple[Path, ...], max_examples: int, id: str | None = None
-    ) -> list[FuzzError]:
+    def deploy_and_run(self, max_examples: int, id: str | None = None) -> list[FuzzError]:
 
         test_contracts: list[ArbitrumContract]
         if self.is_foundry:
@@ -242,17 +230,14 @@ class Skribe:
             contract_ = StylusContract(cargo_bin=self._cargo_bin, contract_dir=self.contract_dir)
             test_contracts = [contract_]
 
-        child_wasm_kasts = []
-        child_wasm_kasts = [parse_wasm_file(p) for p in child_wasms]
-
         errors: list[FuzzError] = []
         for contract in test_contracts:
-            errors += self.deploy_and_run_contract(contract, child_wasm_kasts, max_examples, id)
+            errors += self.deploy_and_run_contract(contract, max_examples, id)
 
         return errors
 
     def deploy_and_run_contract(
-        self, contract: ArbitrumContract, child_wasm_kasts: list[KInner], max_examples: int, id: str | None = None
+        self, contract: ArbitrumContract, max_examples: int, id: str | None = None
     ) -> list[FuzzError]:
 
         contract_kast: KInner
@@ -263,11 +248,10 @@ class Skribe:
             contract_kast = bytesToken(bytecode)
 
         setup = setup_method(contract)
-        expected_len = 0 if setup is None else len(setup.inputs)
-        if expected_len != len(child_wasm_kasts):
-            raise TypeError(f'Expected {expected_len} children, found {len(child_wasm_kasts)}')
+        if setup is not None and 0 != len(setup.inputs):
+            raise TypeError('The "setUp" function cannot have any parameters')
 
-        init_config = self.deploy_test(contract_kast, setup is not None, child_wasm_kasts)
+        init_config = self.deploy_test(contract_kast, setup is not None)
         template_conf, init_subst = split_config_from(init_config)
 
         tests = self.select_tests(contract, id)
