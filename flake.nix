@@ -7,13 +7,16 @@
     flake-utils.url = "github:numtide/flake-utils";
     k-framework.url = "github:runtimeverification/k/v7.1.276";
     k-framework.inputs.nixpkgs.follows = "nixpkgs";
-    uv2nix.url = "github:pyproject-nix/uv2nix/680e2f8e637bc79b84268949d2f2b2f5e5f1d81c";
-    # stale nixpkgs is missing the alias `lib.match` -> `builtins.match`
-    # therefore point uv2nix to a patched nixpkgs, which introduces this alias
-    # this is a temporary solution until nixpkgs us up-to-date again
-    uv2nix.inputs.nixpkgs.url = "github:runtimeverification/nixpkgs/libmatch";
+    uv2nix.url = "github:pyproject-nix/uv2nix/be511633027f67beee87ab499f7b16d0a2f7eceb";
+    # uv2nix requires a newer version of nixpkgs
+    # therefore, we pin uv2nix specifically to a newer version of nixpkgs
+    # until we replaced our stale version of nixpkgs with an upstream one as well
+    # but also uv2nix requires us to call it with `callPackage`, so we add stuff
+    # from the newer nixpkgs to our stale nixpkgs via an overlay
+    nixpkgs-unstable.url = "github:NixOS/nixpkgs/nixos-unstable";
+    uv2nix.inputs.nixpkgs.follows = "nixpkgs-unstable";
     # uv2nix.inputs.nixpkgs.follows = "nixpkgs";
-    pyproject-build-systems.url = "github:pyproject-nix/build-system-pkgs/7dba6dbc73120e15b558754c26024f6c93015dd7";
+    pyproject-build-systems.url = "github:pyproject-nix/build-system-pkgs/dbfc0483b5952c6b86e36f8b3afeb9dde30ea4b5";
     pyproject-build-systems = {
       inputs.nixpkgs.follows = "nixpkgs";
       inputs.uv2nix.follows = "uv2nix";
@@ -23,7 +26,7 @@
 
     rust-overlay.url = "github:oxalica/rust-overlay";
   };
-  outputs = { self, rv-nix-tools, nixpkgs, flake-utils, pyproject-nix, pyproject-build-systems, uv2nix, k-framework, rust-overlay }:
+  outputs = { self, rv-nix-tools, nixpkgs, flake-utils, pyproject-nix, pyproject-build-systems, uv2nix, k-framework, rust-overlay, nixpkgs-unstable }:
   let
     pythonVer = "310";
   in flake-utils.lib.eachSystem [
@@ -33,6 +36,13 @@
       "aarch64-darwin"
     ] (system:
     let
+      pkgs-unstable = import nixpkgs-unstable {
+        inherit system;
+      };
+      # for uv2nix, remove this once we updated to a newer version of nixpkgs
+      staleNixpkgsOverlay = final: prev: {
+        inherit (pkgs-unstable) replaceVars;
+      };
       # due to the nixpkgs that we use in this flake being outdated, uv is also heavily outdated
       # we can instead use the binary release of uv provided by uv2nix for now
       uvOverlay = final: prev: {
@@ -58,6 +68,7 @@
       pkgs = import nixpkgs {
         inherit system;
         overlays = [
+          staleNixpkgsOverlay
           uvOverlay
           kOverlay
           skribeOverlay
