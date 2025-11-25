@@ -33,6 +33,20 @@ module WASM-OPERATIONS
             ...
           </stylusvm>)
         </stylusvms>
+        <program>      _ => .Bytes     </program>
+        <jumpDests>    _ => .Bytes     </jumpDests>
+        <pc>           _ => 0          </pc>
+        <memoryUsed>   _ => 0          </memoryUsed>
+        <output>       _ => .Bytes     </output>
+        <wordStack>    _ => .WordStack </wordStack>
+        <localMem>     _ => .Bytes     </localMem>
+
+    rule [#initStylusVM-reset]:
+        <k> #initStylusVM _CONTRACT _CODE ... </k>
+        <stylusvms>
+          (<stylusvm> _:WasmCell ... </stylusvm> => .Bag)
+        </stylusvms>
+
 
     syntax K ::= initContractModule(ModuleDecl)   [function]
  // ------------------------------------------------------------------------
