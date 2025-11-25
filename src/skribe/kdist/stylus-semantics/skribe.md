@@ -126,6 +126,33 @@ module SKRIBE
         <k> #halt => #popCallStack ~> #dropWorldState </k>
         <stylusvms> .Bag </stylusvms>
 
+```
+
+### Cheatcode calling mechanism for Skribe
+
+```k
+    syntax KItem ::= "#cheatcode_returnStylus" Int  [symbol(cheatcode_returnStylus)]
+
+    rule [cheatcode.call.stylus]:
+        <k> (#checkCall _ _
+        ~> #call _ CHEAT_ADDR _ _ _ ARGS _
+        ~> #returnStylus RET_LEN_PTR )
+        => #cheatcode_call #asWord(#range(ARGS, 0, 4)) #range(ARGS, 4, lengthBytes(ARGS) -Int 4)
+        ~> #cheatcode_returnStylus RET_LEN_PTR
+        ...
+        </k>
+        <output> _ => .Bytes </output>
+      requires CHEAT_ADDR ==Int #address(FoundryCheat)
+      [priority(40)]
+
+    rule [cheatcode.return]:
+        <k> #cheatcode_returnStylus RET_LEN_PTR => .K ... </k>
+        <instrs> (.K => #memStore(RET_LEN_PTR, Int2Bytes(4, lengthBytes(OUT), LE))
+                     ~> i32.const 0) 
+                  ...
+        </instrs>
+        <output> OUT </output>
+
 endmodule
 ```
 
