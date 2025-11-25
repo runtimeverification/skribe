@@ -103,7 +103,7 @@ class SkribeDefinition:
         """
         # First run the term normally.
         proc_res = self.krun_with_kast(pgm, sort, **kwargs)
-        
+
         # If the interpreter does not request hook handling, we're done.
         if proc_res.returncode != EXIT_CODE_PYK_HOOK:
             return proc_res
@@ -114,7 +114,6 @@ class SkribeDefinition:
 
         kwargs['pmap'] = None
         kwargs['cmap'] = None
-
 
         # Continue execution with hook-processing loop
         return self.krun_term_with_pyk_hooks(kore_term, hooks, **kwargs)
@@ -137,10 +136,10 @@ class SkribeDefinition:
         while True:
             # Apply hooks before running the interpreter.
             kore_term = apply_hooks_k_cell(kore_term)
-            
+
             # Run the interpreter in term mode.
             proc_res = self.krun.run_process(kore_term, term=True, expand_macros=False, **kwargs)
-            
+
             # If no hook exit code was produced, execution is finished.
             if proc_res.returncode != EXIT_CODE_PYK_HOOK:
                 return proc_res
