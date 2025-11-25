@@ -31,7 +31,6 @@ module STYLUS
         <k> #callWithWasm ACCTFROM ACCTTO ACCTCODE WASMMOD VALUE APPVALUE ARGS STATIC
          => #pushCallStack ~> #pushWorldState
          ~> #transferFunds ACCTFROM ACCTTO VALUE
-         ~> #resetCallState
          ~> #mkCallWasm ACCTFROM ACCTTO ACCTCODE WASMMOD APPVALUE ARGS STATIC
             ...
         </k>
