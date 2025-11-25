@@ -294,6 +294,64 @@ Equivalent to the [`SLOAD`](https://www.evm.codes/#54) opcode in EVM.
         <output> OUTPUT </output>
         <k> #endWasm ... </k>
 
+
+```
+
+## create1
+
+```k
+    rule [hostCall-create1]:
+        <instrs> hostCall ( "vm_hooks" , "create1" , [ i32  i32  i32  i32  i32  .ValTypes ] -> [ .ValTypes ] )
+              => pushStack(REVERT_LEN_PTR)
+              ~> pushStack(CONTRACT_PTR)
+              ~> #memLoad(ENDOWMENT_PTR, 32)
+              ~> #asWordFromStack
+              ~> #memLoad(CODE_PTR, CODE_LEN)
+              ~> hostCallAux("vm_hooks", "create1")
+                 ...
+        </instrs>
+        <locals>
+          0 |-> < i32 > CODE_PTR
+          1 |-> < i32 > CODE_LEN
+          2 |-> < i32 > ENDOWMENT_PTR
+          3 |-> < i32 > CONTRACT_PTR
+          4 |-> < i32 > REVERT_LEN_PTR
+        </locals>
+        <k> #endWasm ... </k>
+
+    // TODO check valid init code
+    rule [hostCallAux-create1]:
+        <instrs> hostCallAux ( "vm_hooks" , "create1" )
+              => #waitCommands
+              ~> #returnCreateResult CONTRACT_PTR REVERT_LEN_PTR
+                 ...
+        </instrs>
+        <k> (.K => #accessAccounts #newAddr(ACCT, NONCE)
+                ~> #checkCreate ACCT ENDOWMENT
+                ~> #create ACCT #newAddr(ACCT, NONCE) ENDOWMENT CODE
+                ~> #codeDeposit #newAddr(ACCT, NONCE)
+            )
+            ~> #endWasm ...
+        </k>
+        <id> ACCT </id>
+        <account>
+          <acctID> ACCT </acctID>
+          <nonce> NONCE </nonce>
+          ...
+        </account>
+        <stylusStack> CODE:Bytes : ENDOWMENT:Int : CONTRACT_PTR:Int : REVERT_LEN_PTR:Int : S => S </stylusStack>
+
+    syntax InternalInstr ::= "#returnCreateResult" Int Int
+ // ----------------------------------------------
+    rule [returnCreateResult]:
+        <instrs> #returnCreateResult CONTRACT_PTR REVERT_LEN_PTR
+              => #memStore(REVERT_LEN_PTR, Int2Bytes(32, lengthBytes(OUT), BE))
+              ~> #memStore(CONTRACT_PTR, Int2Bytes(20, ADDR, BE))
+                 ...
+        </instrs>
+        <wordStack> ADDR : S => S </wordStack>
+        <output> OUT </output>
+
 ```
 
 ```k
