@@ -266,6 +266,10 @@ class FuzzError(SkribeError):
     counterexample: tuple[Any, ...]
 
     def __init__(self, test_name: str, counterexample: tuple[KInner, ...]):
+        # B042 Exception class with `__init__` should pass all args to `super().__init__()`
+        # in order to work with `copy.copy()`.
+        super().__init__(test_name, counterexample)
+
         self.test_name = test_name
         self.counterexample = counterexample
 

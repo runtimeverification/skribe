@@ -4,13 +4,13 @@ build-backend = "hatchling.build"
 
 [project]
 name = "skribe"
-version = "0.1.16"
+version = "0.1.17"
 description = "Property testing for Stylus smart contracts"
 readme = "README.md"
 requires-python = "~=3.10"
 dependencies = [
-    "pykwasm@git+https://github.com/runtimeverification/wasm-semantics.git@v0.1.132#subdirectory=pykwasm",
-    "kontrol@git+https://github.com/runtimeverification/kontrol.git@v1.0.175",
+    "pykwasm@git+https://github.com/runtimeverification/wasm-semantics.git@v0.1.142#subdirectory=pykwasm",
+    "kontrol@git+https://github.com/runtimeverification/kontrol.git@v1.0.218",
 ]
 
 [[project.authors]]
