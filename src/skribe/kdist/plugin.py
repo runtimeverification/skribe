@@ -5,6 +5,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING
 
 from kevm_pyk.kompile import KompileTarget, kevm_kompile
+from kontrol.kdist.utils import KSRC_DIR as FOUNDRY_KSRC_DIR
 from pyk.kbuild.utils import k_version
 from pyk.kdist.api import Target
 
@@ -72,7 +73,7 @@ __TARGETS__: Final = {
             'main_file': src_dir / 'stylus-semantics/skribe.md',
             'main_module': 'SKRIBE',
             'syntax_module': 'SKRIBE-SYNTAX',
-            'includes': [src_dir],
+            'includes': [src_dir, FOUNDRY_KSRC_DIR],
         },
     ),
 }

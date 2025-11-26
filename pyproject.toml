@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "skribe"
-version = "0.1.17"
+version = "0.1.18"
 description = "Property testing for Stylus smart contracts"
 readme = "README.md"
 requires-python = "~=3.10"
@@ -58,10 +58,13 @@ remove-all-unused-imports = true
 ignore-init-module-imports = true
 remove-duplicate-keys = true
 remove-unused-variables = true
+exclude = "forge-std"
 
 [tool.black]
 line-length = 120
 skip-string-normalization = true
+exclude = "forge-std"
 
 [tool.mypy]
 disallow_untyped_defs = true
+exclude = "forge-std"

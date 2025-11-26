@@ -1,12 +1,10 @@
 from __future__ import annotations
 
-import json
 import sys
 from argparse import ArgumentParser
 from pathlib import Path
 
 from pyk.cli.utils import ensure_dir_path
-from pyk.utils import abs_or_rel_to
 from rich.console import Console
 
 from .skribe import InitializationError, Skribe
@@ -28,8 +26,9 @@ def _exec_build(dir_path: Path | None) -> None:
     """
     dir_path = Path.cwd() if dir_path is None else dir_path
 
-    skribe = Skribe(concrete_definition)
-    skribe.build_stylus_contract(contract_dir=dir_path)
+    skribe = Skribe(concrete_definition, dir_path)
+
+    skribe.build_contract()
 
     exit(0)
 
@@ -54,12 +53,10 @@ def _exec_run(dir_path: Path | None, id: str | None, max_examples: int) -> None:
 
     dir_path = Path.cwd() if dir_path is None else dir_path
 
-    skribe = Skribe(concrete_definition)
-
-    child_wasms = _read_config_file(skribe, dir_path)
+    skribe = Skribe(concrete_definition, dir_path)
 
     try:
-        failed = skribe.deploy_and_run(contract_dir=dir_path, child_wasms=child_wasms, id=id, max_examples=max_examples)
+        failed = skribe.deploy_and_run(id=id, max_examples=max_examples)
     except InitializationError:
         err_console.print('[bold red]Initialization failed[/bold red]')
         exit(1)
@@ -70,26 +67,9 @@ def _exec_run(dir_path: Path | None, id: str | None, max_examples: int) -> None:
     err_console.print(f'[bold red]{len(failed)}[/bold red] test(s) failed:')
 
     for err in failed:
-        err_console.print(f'  {err.test_name} {err.counterexample}')
+        err_console.print(f'  {err.description} {err.counterexample}')
 
     exit(1)
-
-
-def _read_config_file(skribe: Skribe, dir_path: Path | None = None) -> tuple[Path, ...]:
-    dir_path = Path.cwd() if dir_path is None else dir_path
-    config_path = dir_path / 'skribe.json'
-
-    def get_wasm_path(c: Path) -> Path:
-        c = abs_or_rel_to(c, dir_path)
-        assert c.is_file() and c.suffix == '.wasm'
-        return c
-
-    if config_path.is_file():
-        with open(config_path) as f:
-            config = json.load(f)
-            return tuple(get_wasm_path(Path(c)) for c in config['contracts'])
-
-    return ()
 
 
 def _argument_parser() -> ArgumentParser:

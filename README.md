@@ -46,7 +46,7 @@ Example contract with `init` function:
 ```rust
 #[public]
 impl TestCounter {
-    pub fn init(&mut self, counter: Address) {
+    pub fn setUp(&mut self, counter: Address) {
         self.counter.set(counter);
     }
     // ...
@@ -65,7 +65,7 @@ Example `skribe.json` file for the contract above:
 
 #### Test functions
 
-Test functions must start with the `test_` prefix and return either `bool` or `()`. A panic or a `false` result is
+Test functions must start with the `test_` prefix and return `()`. A panic is
 considered a test failure. Skribe automatically discovers these test functions and runs them with randomized input
 values as part of the fuzzing process.
 
@@ -76,11 +76,11 @@ Example test function:
 impl TestCounter {
     // ...
 
-    pub fn test_call_set_get_number(&mut self, x: U256) -> bool {
+    pub fn test_call_set_get_number(&mut self, x: U256) {
         let counter = ICounter::new(self.counter.get());
         counter.set_number(Call::new_in(self), x).unwrap();
 
-        counter.number(self).unwrap() == x
+        assert_eq!(counter.number(self).unwrap(), x)
     }
 }
 ```

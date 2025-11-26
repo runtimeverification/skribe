@@ -30,6 +30,7 @@ handle reentrancy explicitly.
       <locals>
         .Map
       </locals>
+      <k> #endWasm ... </k>
 ```
 
 ## msg_value
@@ -46,6 +47,7 @@ Get the ETH value in wei sent to the program.
         0 |-> < i32 > MEM_OFFSET
       </locals>
       <callValue> CALL_VALUE </callValue>
+      <k> #endWasm ... </k>
 
 ```
 
@@ -66,6 +68,7 @@ Equivalent to EVM's [`CALLDATA_COPY`](https://www.evm.codes/#37).
         0 |-> < i32 > MEM_OFFSET
       </locals>
       <callData> CALL_DATA </callData>
+      <k> #endWasm ... </k>
 ```
 
 ## storage_load_bytes32
@@ -87,6 +90,7 @@ Equivalent to the [`SLOAD`](https://www.evm.codes/#54) opcode in EVM.
           0 |-> < i32 > KEY_OFFSET
           1 |-> < i32 > DEST_OFFSET
         </locals>
+        <k> #endWasm ... </k>
 
     rule [hostCallAux-storage-load-bytes32]:
         <instrs> hostCallAux ( "vm_hooks" , "storage_load_bytes32" )
@@ -103,6 +107,7 @@ Equivalent to the [`SLOAD`](https://www.evm.codes/#54) opcode in EVM.
           <storage> STORAGE </storage>
           ...
         </account>
+        <k> #endWasm ... </k>
 ```
 
 ## storage_cache_bytes32
@@ -119,6 +124,7 @@ Equivalent to the [`SLOAD`](https://www.evm.codes/#54) opcode in EVM.
           0 |-> < i32 > KEY_OFFSET
           1 |-> < i32 > VAL_OFFSET
         </locals>
+        <k> #endWasm ... </k>
 
     rule [hostCallAux-storage-cache-bytes32]:
         <instrs> hostCallAux ( "vm_hooks" , "storage_cache_bytes32" ) => .K ... </instrs>
@@ -129,6 +135,7 @@ Equivalent to the [`SLOAD`](https://www.evm.codes/#54) opcode in EVM.
           <storage> STORAGE => STORAGE [ #asWord(KEY) <- #asWord(VAL) ]  </storage>
           ...
         </account>
+        <k> #endWasm ... </k>
 ```
 
 ## storage_flush_cache
@@ -140,6 +147,7 @@ Equivalent to the [`SLOAD`](https://www.evm.codes/#54) opcode in EVM.
         <locals>
           0 |-> < i32 > _CLEAR
         </locals>
+        <k> #endWasm ... </k>
 ```
 
 ## write_result
@@ -155,11 +163,13 @@ Equivalent to the [`SLOAD`](https://www.evm.codes/#54) opcode in EVM.
           0 |-> < i32 > DATA_OFFSET
           1 |-> < i32 > DATA_LEN
         </locals>
+        <k> #endWasm ... </k>
 
     rule [hostCallAux-write-result]:
         <instrs> hostCallAux ( "vm_hooks" , "write_result" ) => .K ... </instrs>
         <stylusStack> DATA : S => S </stylusStack>
         <output> _ => DATA </output>
+        <k> #endWasm ... </k>
 
 ```
 
@@ -185,6 +195,7 @@ Equivalent to the [`SLOAD`](https://www.evm.codes/#54) opcode in EVM.
           4 |-> < i64 > _GAS
           5 |-> < i32 > RET_LEN_PTR
         </locals>
+        <k> #endWasm ... </k>
 
     rule [hostCallAux-call-contract]:
         <instrs> hostCallAux ( "vm_hooks" , "call_contract" )
@@ -195,7 +206,8 @@ Equivalent to the [`SLOAD`](https://www.evm.codes/#54) opcode in EVM.
                 ~> #checkCall ACCTFROM VALUE
                 ~> #call ACCTFROM ACCTTO ACCTTO VALUE VALUE DATA false
                 ~> #returnStylus RET_LEN_PTR
-            ) ... 
+            ) 
+          ~> #endWasm ... 
         </k>
         <stylusStack> ACCTTO : (DATA : VALUE : RET_LEN_PTR : S) => S </stylusStack>
         <id> ACCTFROM </id>
@@ -223,6 +235,44 @@ Equivalent to the [`SLOAD`](https://www.evm.codes/#54) opcode in EVM.
 
 ```
 
+## static_call_contract
+
+```k
+    rule [hostCall-static-call-contract]:
+        <instrs> hostCall ( "vm_hooks" , "static_call_contract" , [ i32  i32  i32  i64  i32  .ValTypes ] -> [ i32  .ValTypes ] )
+              => pushStack(RET_LEN_PTR)
+              ~> #memLoad(DATA_PTR, DATA_LEN)
+              ~> #memLoad(CONTRACT_PTR, 20)
+              ~> #asWordFromStack
+              ~> hostCallAux("vm_hooks", "static_call_contract")
+                 ...
+        </instrs>
+        <locals>
+          0 |-> < i32 > CONTRACT_PTR
+          1 |-> < i32 > DATA_PTR
+          2 |-> < i32 > DATA_LEN
+          3 |-> < i64 > _GAS
+          4 |-> < i32 > RET_LEN_PTR
+        </locals>
+        <k> #endWasm ... </k>
+
+    rule [hostCallAux-static-call-contract]:
+        <instrs> hostCallAux ( "vm_hooks" , "static_call_contract" )
+              => #waitCommands
+                 ...
+        </instrs>
+        <k> (.K => #accessAccounts ACCTTO
+                ~> #checkCall ACCTFROM 0
+                ~> #call ACCTFROM ACCTTO ACCTTO 0 0 DATA false
+                ~> #returnStylus RET_LEN_PTR
+            ) 
+          ~> #endWasm ... 
+        </k>
+        <stylusStack> ACCTTO : (DATA : RET_LEN_PTR : S) => S </stylusStack>
+        <id> ACCTFROM </id>
+
+```
+
 ## read_return_data
 
 ```k
@@ -242,6 +292,65 @@ Equivalent to the [`SLOAD`](https://www.evm.codes/#54) opcode in EVM.
           2 |-> < i32 > SIZE
         </locals>
         <output> OUTPUT </output>
+        <k> #endWasm ... </k>
+
+
+```
+
+## create1
+
+```k
+    rule [hostCall-create1]:
+        <instrs> hostCall ( "vm_hooks" , "create1" , [ i32  i32  i32  i32  i32  .ValTypes ] -> [ .ValTypes ] )
+              => pushStack(REVERT_LEN_PTR)
+              ~> pushStack(CONTRACT_PTR)
+              ~> #memLoad(ENDOWMENT_PTR, 32)
+              ~> #asWordFromStack
+              ~> #memLoad(CODE_PTR, CODE_LEN)
+              ~> hostCallAux("vm_hooks", "create1")
+                 ...
+        </instrs>
+        <locals>
+          0 |-> < i32 > CODE_PTR
+          1 |-> < i32 > CODE_LEN
+          2 |-> < i32 > ENDOWMENT_PTR
+          3 |-> < i32 > CONTRACT_PTR
+          4 |-> < i32 > REVERT_LEN_PTR
+        </locals>
+        <k> #endWasm ... </k>
+
+    // TODO check valid init code
+    rule [hostCallAux-create1]:
+        <instrs> hostCallAux ( "vm_hooks" , "create1" )
+              => #waitCommands
+              ~> #returnCreateResult CONTRACT_PTR REVERT_LEN_PTR
+                 ...
+        </instrs>
+        <k> (.K => #accessAccounts #newAddr(ACCT, NONCE)
+                ~> #checkCreate ACCT ENDOWMENT
+                ~> #create ACCT #newAddr(ACCT, NONCE) ENDOWMENT CODE
+                ~> #codeDeposit #newAddr(ACCT, NONCE)
+            )
+            ~> #endWasm ...
+        </k>
+        <id> ACCT </id>
+        <account>
+          <acctID> ACCT </acctID>
+          <nonce> NONCE </nonce>
+          ...
+        </account>
+        <stylusStack> CODE:Bytes : ENDOWMENT:Int : CONTRACT_PTR:Int : REVERT_LEN_PTR:Int : S => S </stylusStack>
+
+    syntax InternalInstr ::= "#returnCreateResult" Int Int
+ // ----------------------------------------------
+    rule [returnCreateResult]:
+        <instrs> #returnCreateResult CONTRACT_PTR REVERT_LEN_PTR
+              => #memStore(REVERT_LEN_PTR, Int2Bytes(32, lengthBytes(OUT), BE))
+              ~> #memStore(CONTRACT_PTR, Int2Bytes(20, ADDR, BE))
+                 ...
+        </instrs>
+        <wordStack> ADDR : S => S </wordStack>
+        <output> OUT </output>
 
 ```
 

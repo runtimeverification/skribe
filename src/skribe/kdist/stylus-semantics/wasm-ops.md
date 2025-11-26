@@ -14,16 +14,39 @@ module WASM-OPERATIONS
     syntax InternalCmd ::= "#initStylusVM" Account ModuleDecl     [symbol(#initStylusVM)]
  // ------------------------------------------------------------------------------------------------------------
     rule [#initStylusVM]:
-        <k> #initStylusVM _CONTRACT CODE => #waitWasm ~> #setContractModIdx ... </k>
+        <k> #initStylusVM _CONTRACT CODE => #waitWasm ... </k>
         <stylusvms>
           (.Bag => <stylusvm>
             <wasm>
               <instrs> initContractModule(CODE) </instrs>
+              <moduleRegistry> #quoteUnparseWasmString("vm_hooks") |-> 0 </moduleRegistry>
+              <nextModuleIdx> 1 </nextModuleIdx>
+              <moduleInstances>
+                <moduleInst>
+                  <modIdx> 0 </modIdx>
+                  ...
+                </moduleInst>
+              </moduleInstances>
               ...
             </wasm>
+            <contractModIdx> 1 </contractModIdx>
             ...
           </stylusvm>)
         </stylusvms>
+        <program>      _ => .Bytes     </program>
+        <jumpDests>    _ => .Bytes     </jumpDests>
+        <pc>           _ => 0          </pc>
+        <memoryUsed>   _ => 0          </memoryUsed>
+        <output>       _ => .Bytes     </output>
+        <wordStack>    _ => .WordStack </wordStack>
+        <localMem>     _ => .Bytes     </localMem>
+
+    rule [#initStylusVM-reset]:
+        <k> #initStylusVM _CONTRACT _CODE ... </k>
+        <stylusvms>
+          (<stylusvm> _:WasmCell ... </stylusvm> => .Bag)
+        </stylusvms>
+
 
     syntax K ::= initContractModule(ModuleDecl)   [function]
  // ------------------------------------------------------------------------
@@ -31,14 +54,6 @@ module WASM-OPERATIONS
       => sequenceStmts(text2abstract(M .Stmts))
 
     rule initContractModule(M:ModuleDecl) => M              [owise]
-
-    syntax InternalCmd ::= "#setContractModIdx"
- // ------------------------------------------------------
-    rule [setContractModIdx]:
-        <k> #setContractModIdx => .K ... </k>
-        <contractModIdx> _ => NEXTIDX -Int 1 </contractModIdx>
-        <nextModuleIdx> NEXTIDX </nextModuleIdx>
-        <instrs> .K </instrs>
 
     syntax WasmStringToken ::= #unparseWasmString ( String )         [function, total, hook(STRING.string2token)]
                              | #quoteUnparseWasmString ( String )   [function, total]
@@ -65,12 +80,14 @@ module WASM-OPERATIONS
           <mdata> DATA => #setBytesRange(DATA, OFFSET, BS) </mdata>
           ...
         </memInst>
+        <k> #endWasm ... </k>
       requires #signed(i32 , OFFSET) +Int lengthBytes(BS) <=Int (SIZE *Int #pageSize())
        andBool 0 <=Int #signed(i32 , OFFSET)
       [preserves-definedness] // setBytesRange total, MEMADDR key existed prior in <mems> map
 
     rule [memStore-trap]:
         <instrs> #memStore(_, _) => trap ... </instrs>
+        <k> #endWasm ... </k>
       [owise]
 
 
@@ -79,6 +96,7 @@ module WASM-OPERATIONS
     rule [memLoad-zero-length]:
         <instrs> #memLoad(_, 0) => .K ... </instrs>
         <stylusStack> STACK => .Bytes : STACK </stylusStack>
+        <k> #endWasm ... </k>
 
     rule [memLoad]:
          <instrs> #memLoad(OFFSET, LENGTH) => .K ... </instrs>
@@ -95,12 +113,14 @@ module WASM-OPERATIONS
            <mdata> DATA </mdata>
            ...
          </memInst>
+         <k> #endWasm ... </k>
       requires #signed(i32 , LENGTH) >Int 0
        andBool #signed(i32 , OFFSET) >=Int 0
        andBool #signed(i32 , OFFSET) +Int #signed(i32 , LENGTH) <=Int (SIZE *Int #pageSize())
 
     rule [memLoad-trap]:
         <instrs> #memLoad(_, _) => trap ... </instrs>
+        <k> #endWasm ... </k>
       [owise]
 
 endmodule
