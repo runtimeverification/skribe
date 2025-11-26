@@ -1,5 +1,5 @@
 version = 1
-revision = 2
+revision = 3
 requires-python = ">=3.10, <4"
 resolution-markers = [
     "python_full_version >= '3.11'",
@@ -1344,12 +1344,10 @@ wheels = [
 
 [[package]]
 name = "pykwasm"
-version = "0.1.132"
-source = { git = "https://github.com/runtimeverification/wasm-semantics.git?subdirectory=pykwasm&rev=v0.1.132#18f65881c050f63a80fc100357f9e5d5bdda7c5c" }
+version = "0.1.136"
+source = { git = "https://github.com/runtimeverification/wasm-semantics.git?subdirectory=pykwasm&rev=v0.1.136#6ba262cef67cbdb25b2ebb7ecba73fd3228ac36c" }
 dependencies = [
-    { name = "cytoolz" },
     { name = "kframework" },
-    { name = "numpy" },
     { name = "py-wasm" },
 ]
 
@@ -1746,7 +1744,7 @@ dev = [
 [package.metadata]
 requires-dist = [
     { name = "kontrol", git = "https://github.com/runtimeverification/kontrol.git?rev=v1.0.218" },
-    { name = "pykwasm", git = "https://github.com/runtimeverification/wasm-semantics.git?subdirectory=pykwasm&rev=v0.1.132" },
+    { name = "pykwasm", git = "https://github.com/runtimeverification/wasm-semantics.git?subdirectory=pykwasm&rev=v0.1.136" },
 ]
 
 [package.metadata.requires-dev]
