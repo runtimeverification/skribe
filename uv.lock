@@ -1344,8 +1344,8 @@ wheels = [
 
 [[package]]
 name = "pykwasm"
-version = "0.1.136"
-source = { git = "https://github.com/runtimeverification/wasm-semantics.git?subdirectory=pykwasm&rev=v0.1.136#6ba262cef67cbdb25b2ebb7ecba73fd3228ac36c" }
+version = "0.1.142"
+source = { git = "https://github.com/runtimeverification/wasm-semantics.git?subdirectory=pykwasm&rev=v0.1.142#9efca0cc12aca85d15cf0db28d7aa21c20cf7da7" }
 dependencies = [
     { name = "kframework" },
     { name = "py-wasm" },
@@ -1744,7 +1744,7 @@ dev = [
 [package.metadata]
 requires-dist = [
     { name = "kontrol", git = "https://github.com/runtimeverification/kontrol.git?rev=v1.0.218" },
-    { name = "pykwasm", git = "https://github.com/runtimeverification/wasm-semantics.git?subdirectory=pykwasm&rev=v0.1.136" },
+    { name = "pykwasm", git = "https://github.com/runtimeverification/wasm-semantics.git?subdirectory=pykwasm&rev=v0.1.142" },
 ]
 
 [package.metadata.requires-dev]
