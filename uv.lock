@@ -1,5 +1,5 @@
 version = 1
-revision = 3
+revision = 2
 requires-python = ">=3.10, <4"
 resolution-markers = [
     "python_full_version >= '3.11'",
@@ -446,7 +446,7 @@ name = "exceptiongroup"
 version = "1.3.1"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "typing-extensions", marker = "python_full_version < '3.11'" },
+    { name = "typing-extensions", marker = "python_full_version < '3.13'" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/50/79/66800aadf48771f6b62f7eb014e352e5d06856655206165d775e675a02c9/exceptiongroup-1.3.1.tar.gz", hash = "sha256:8b412432c6055b0b7d14c310000ae93352ed6754f70fa8f7c34141f91c4e3219", size = 30371, upload-time = "2025-11-21T23:01:54.787Z" }
 wheels = [
@@ -666,8 +666,8 @@ wheels = [
 
 [[package]]
 name = "kevm-pyk"
-version = "1.0.864"
-source = { git = "https://github.com/runtimeverification/evm-semantics.git?subdirectory=kevm-pyk&rev=v1.0.864#a369cd7d521b8a88a14ea608a91b109bf16b298f" }
+version = "1.0.877"
+source = { git = "https://github.com/runtimeverification/evm-semantics.git?subdirectory=kevm-pyk&rev=v1.0.877#65c8377b298263368992ade824e3dd30aef29e81" }
 dependencies = [
     { name = "frozendict" },
     { name = "kframework" },
@@ -677,7 +677,7 @@ dependencies = [
 
 [[package]]
 name = "kframework"
-version = "7.1.286"
+version = "7.1.302"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "coloredlogs" },
@@ -695,15 +695,15 @@ dependencies = [
     { name = "tomli" },
     { name = "xdg-base-dirs" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/c9/3c/3dae901a12ce9592d081dde923d01aa695ec841be0002566fe24afb4db97/kframework-7.1.286.tar.gz", hash = "sha256:765bfec5c17f2ca83fa31dec766bb352463a5891466007452ddc27863c3e4710", size = 242935, upload-time = "2025-09-13T03:45:10.057Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/52/81/f5ffe116fdab4db9f172e7af0782e0cf8be11a37bc433d492ed102440d73/kframework-7.1.302.tar.gz", hash = "sha256:27a11afeef4597603775756d61ee31b8db2046caf39ba8ffc0d678267cd31b30", size = 243260, upload-time = "2025-11-12T13:59:38.672Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/e8/ff/f0447faf2cfd47d274a61d2e79d63126f2c80f95f512580be4fbdab2c515/kframework-7.1.286-py3-none-any.whl", hash = "sha256:35489e1e7c90b1c49c894337b05d0413409c0fb9f6e2ee2a743a671f876ea6ab", size = 294119, upload-time = "2025-09-13T03:45:08.119Z" },
+    { url = "https://files.pythonhosted.org/packages/f0/fc/2d9f6c41d8972f44dbb1a6e7a9aa6a2aa63b4636e0a7ee0b741bd099bcfa/kframework-7.1.302-py3-none-any.whl", hash = "sha256:c67c6044c47c26a3e250268dadc9a95c41734769fa0cde9edf9e99a822d9f454", size = 294462, upload-time = "2025-11-12T13:59:36.95Z" },
 ]
 
 [[package]]
 name = "kontrol"
-version = "1.0.188"
-source = { git = "https://github.com/runtimeverification/kontrol.git?rev=v1.0.188#9d9bc64cffe853a0ecdabb52ecefff7694236038" }
+version = "1.0.218"
+source = { git = "https://github.com/runtimeverification/kontrol.git?rev=v1.0.218#09ee92a0b6cc36ae4599366e78500d6c84f1ee35" }
 dependencies = [
     { name = "eth-abi" },
     { name = "eth-utils" },
@@ -1745,7 +1745,7 @@ dev = [
 
 [package.metadata]
 requires-dist = [
-    { name = "kontrol", git = "https://github.com/runtimeverification/kontrol.git?rev=v1.0.188" },
+    { name = "kontrol", git = "https://github.com/runtimeverification/kontrol.git?rev=v1.0.218" },
     { name = "pykwasm", git = "https://github.com/runtimeverification/wasm-semantics.git?subdirectory=pykwasm&rev=v0.1.132" },
 ]
 
