@@ -4142,6 +4142,13 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "56199f7ddabf13fe5074ce809e7d3f42b42ae711800501b5b16ea82ad029c39d"
 
 [[package]]
+name = "skribe"
+version = "0.1.0"
+dependencies = [
+ "stylus-sdk",
+]
+
+[[package]]
 name = "slab"
 version = "0.4.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -4498,6 +4505,7 @@ dependencies = [
  "eyre",
  "hex",
  "mini-alloc",
+ "skribe",
  "stylus-sdk",
  "tokio",
 ]

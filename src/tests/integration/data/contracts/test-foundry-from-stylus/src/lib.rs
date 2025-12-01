@@ -3,9 +3,7 @@ extern crate alloc;
 
 use stylus_sdk::{alloy_primitives::U256, prelude::*};
 
-use crate::skribe::{build_init_code, new_cheatcodes};
-
-mod skribe;
+use skribe::{build_init_code, cheat};
 
 sol_interface! {
   interface ICounter {
@@ -23,16 +21,13 @@ sol_storage! {
     }
 }
 
-const COUNTER_BYTECODE_PATH: &str =
-    "bin/Counter.bin";
+const COUNTER_BYTECODE_PATH: &str = "bin/Counter.bin";
 
 #[public]
 impl TestCounter {
-    pub fn setUp(&mut self) {
+    pub fn set_up(&mut self) {
 
-        let cheatcodes = new_cheatcodes();
-
-        let hex_bytecode = cheatcodes
+        let hex_bytecode = cheat()
             .read_file(&mut *self, COUNTER_BYTECODE_PATH.to_string())
             .unwrap();
         let bytecode = hex::decode(hex_bytecode).unwrap();
