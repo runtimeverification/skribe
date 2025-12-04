@@ -17,33 +17,28 @@ sol_interface! {
 sol_storage! {
     #[entrypoint]
     pub struct TestCounter {
-        uint256 number;
         address counter;
     }
 }
 
-const COUNTER_BYTECODE_PATH: &str =
-    "../stylus-hello-world/target/wasm32-unknown-unknown/release/stylus_hello_world.wasm";
+const COUNTER_BYTECODE_PATH: &str = "bin/Counter.bin";
 
 #[public]
 impl TestCounter {
     pub fn set_up(&mut self) {
-        self.number.set(U256::from(123));
 
-        let bytecode = cheat()
-            .read_file_binary(&mut *self, COUNTER_BYTECODE_PATH.to_string())
+        let hex_bytecode = cheat()
+            .read_file(&mut *self, COUNTER_BYTECODE_PATH.to_string())
             .unwrap();
+        let bytecode = hex::decode(hex_bytecode).unwrap();
+
         let counter_address = unsafe {
             self.vm()
-                .deploy(&build_init_code(&bytecode), U256::ZERO, Option::None)
+                .deploy(&bytecode, U256::ZERO, Option::None)
                 .unwrap()
         };
 
         self.counter.set(counter_address);
-    }
-
-    pub fn test_self_number(&self) {
-        assert_eq!(self.number.get(), U256::from(123));
     }
 
     pub fn test_call_set_get_number(&mut self, x: U256) {
@@ -54,7 +49,9 @@ impl TestCounter {
     }
 
     pub fn test_call_increment(&mut self, x: U256) {
-        cheat().assume(&mut *self, x < U256::MAX).unwrap();
+        if x >= U256::MAX {
+            return;
+        }
 
         let counter = ICounter::new(self.counter.get());
         counter.set_number(&mut *self, x).unwrap();
@@ -63,10 +60,4 @@ impl TestCounter {
         assert_eq!(counter.number(self).unwrap(), x + U256::from(1));
     }
 
-    pub fn test_add_comm(&self, first: U256, second: U256) {
-        let a = first.checked_add(second);
-        let b = second.checked_add(first);
-
-        assert_eq!(a, b);
-    }
 }

@@ -56,3 +56,7 @@ def check_foundry_success() -> KInner:
 
 def check_output(bs: bytes) -> KInner:
     return KApply('checkOutput', [token(bs)])
+
+
+def pyk_hook_result(sig: str, k: KInner) -> KInner:
+    return KApply('skribe.pykHookResult', [token(sig), k])
