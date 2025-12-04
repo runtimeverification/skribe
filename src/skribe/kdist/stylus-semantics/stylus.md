@@ -7,6 +7,7 @@ requires "hostfuns.md"
 module STYLUS
     imports CONFIGURATION
     imports HOSTFUNS
+    imports SWITCH
 ```
 - `#call` retrieves the contract's code and initiates execution. This is equivalent to `#call` in evm-semantics.
 - `#callWithWasm` executes a contract call from given Wasm code. This is analogous to `#callWithCode` in evm-semantics, but tailored for Wasm contracts

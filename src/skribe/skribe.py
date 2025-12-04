@@ -2,10 +2,12 @@ from __future__ import annotations
 
 import shutil
 from functools import cached_property
+from io import BytesIO
 from pathlib import Path
 from typing import TYPE_CHECKING
 
 from eth_abi import decode, encode
+from kontrol.foundry import Foundry
 from pyk.kast.inner import KSort, KToken, KVariable
 from pyk.kast.manip import Subst, split_config_from
 from pyk.kast.prelude.bytes import BYTES, bytesToken, pretty_bytes
@@ -16,9 +18,19 @@ from pyk.kore.syntax import EVar, SortApp
 from pyk.ktool.kfuzz import KFuzzHandler, fuzz
 from pyk.ktool.krun import KRunOutput
 from pyk.utils import run_process
+from pykwasm.wasm2kast import wasm2kast
 
-from .contract import read_contract_metadata
-from .kast.syntax import call_stylus, check_output, new_account, set_contract, set_exit_code, steps_of
+from skribe.contract import StylusContract, argument_strategy, is_foundry_test, setup_method
+
+from .kast.syntax import (
+    call_stylus,
+    check_foundry_success,
+    check_output,
+    new_account,
+    set_contract,
+    set_exit_code,
+    steps_of,
+)
 from .progress import FuzzProgress
 from .simulation import CONFIG_VAR_PARSERS, call_data, config_vars
 from .utils import SkribeError, concrete_definition, parse_wasm_file, subst_on_k_cell
@@ -30,7 +42,8 @@ if TYPE_CHECKING:
     from pyk.kast.inner import KInner
     from pyk.kore.syntax import Pattern
 
-    from .contract import ContractBinding, ContractMetadata
+    from skribe.contract import ArbitrumContract, Method
+
     from .progress import FuzzTask
     from .utils import SkribeDefinition
 
@@ -41,8 +54,9 @@ CALLDATA_EVAR = EVar('VarCALLDATA', SortApp('SortBytes'))
 TRUE_DATA = encode(['bool'], [True])
 EMPTY_DATA = encode([], [])
 
-TEST_CALLER_ID = 0
-TEST_CONTRACT_ID = 1
+CHEATCODE_ID = 0x7109709ECFA91A80626FF3989D68F67F5B1DD12D
+TEST_CALLER_ID = 0x1804C8AB1F12E6BBF3894D4083F33E07309D1F38
+TEST_CONTRACT_ID = 0x7FA9385BE102AC3EAC297483DD6233D62B3E1496
 
 
 class Skribe:
@@ -78,13 +92,17 @@ class Skribe:
             check=True,
         )
 
+    def build_foundry_contract(self, contract_dir: Path) -> None:
+        foundry = Foundry(contract_dir)
+        foundry.build(True)
+
     @staticmethod
-    def deploy_test(contract: KInner, init: bool, child_contracts: list[KInner]) -> KInner:
+    def deploy_test(contract: KInner, setup: bool, child_contracts: list[KInner]) -> KInner:
         """Takes a Stylus contract and its dependencies as kast terms and deploys them in a fresh configuration.
 
         Args:
             contract: The test contract to deploy, represented as a kast term.
-            init: Whether to initialize the contract by calling its 'init' function after deployment.
+            setup: Whether to initialize the contract by calling its 'setUp' function after deployment.
             child_contracts: The child contracts to deploy, represented as kast terms.
 
         Returns:
@@ -96,9 +114,9 @@ class Skribe:
 
         # Stylus currently does not support constructors. As a workaround,
         # test contracts that require constructor-like behavior are expected to
-        # implement an `init` function
-        def call_init(init: bool) -> tuple[KInner, ...]:
-            if not init:
+        # implement a `setUp` function
+        def call_setup(setup: bool) -> tuple[KInner, ...]:
+            if not setup:
                 return ()
 
             # Set up the steps that will deploy the child contracts
@@ -106,7 +124,7 @@ class Skribe:
             deploy_children = [set_contract(i, c, {}) for i, c in enumerate(child_contracts, start=2)]
 
             data = call_data(
-                'init',
+                'setUp',
                 ['address'] * len(child_contracts),
                 [i.to_bytes(length=20, byteorder='big') for i in range(2, 2 + len(child_contracts))],
             )
@@ -121,9 +139,10 @@ class Skribe:
         steps = steps_of(
             [
                 set_exit_code(1),
-                new_account(0),
+                new_account(TEST_CALLER_ID),
+                set_contract(CHEATCODE_ID, bytesToken(b'\x00'), {}),
                 set_contract(TEST_CONTRACT_ID, contract, {}),
-                *(call_init(init)),
+                *(call_setup(setup)),
                 set_exit_code(0),
             ]
         )
@@ -144,7 +163,7 @@ class Skribe:
         self,
         conf: KInner,
         subst: dict[str, KInner],
-        binding: ContractBinding,
+        binding: Method,
         max_examples: int,
         task: FuzzTask,
     ) -> None:
@@ -164,18 +183,17 @@ class Skribe:
         def calldata_to_kore(data: bytes) -> Pattern:
             return kast_to_kore(self.definition.kdefinition, bytesToken(data), BYTES)
 
-        subst['K_CELL'] = steps_of(
-            [
-                set_exit_code(1),
-                call_stylus(TEST_CALLER_ID, TEST_CONTRACT_ID, CALLDATA, 0),
-                check_output(EMPTY_DATA if not binding.outputs else TRUE_DATA),
-                set_exit_code(0),
-            ]
-        )
+        k_steps = [
+            set_exit_code(1),
+            call_stylus(TEST_CALLER_ID, TEST_CONTRACT_ID, CALLDATA, 0),
+            check_foundry_success(),
+            set_exit_code(0),
+        ]
+        subst['K_CELL'] = steps_of(k_steps)
+
         template_config = Subst(subst).apply(conf)
         template_config_kore = kast_to_kore(self.definition.kdefinition, template_config, GENERATED_TOP_CELL)
-
-        template_subst = {CALLDATA_EVAR: binding.strategy.map(calldata_to_kore)}
+        template_subst = {CALLDATA_EVAR: argument_strategy(binding).map(calldata_to_kore)}
 
         fuzz(
             self.definition.path,
@@ -187,37 +205,65 @@ class Skribe:
             subst_func=subst_on_k_cell,
         )
 
-    def select_tests(self, contract_metadata: ContractMetadata, id: str | None) -> tuple[ContractBinding, ...]:
+    def select_tests(self, contract: ArbitrumContract, id: str | None) -> list[Method]:
+        test_methods = []
+        for m in contract.methods:
+            if m.is_test:
+                test_methods.append(m)
+
         if id is None:
-            tests = contract_metadata.test_functions
-            print(f'Discovered {len(tests)} test(s):')
+            tests = test_methods
         else:
-            tests = tuple(b for b in contract_metadata.test_functions if b.name == id)
+            tests = [b for b in test_methods if b.name == id]
             if not tests:
                 raise KeyError(f'Test function {id!r} not found.')
-            print('Selected a single test function:')
-
-        print()
 
         return tests
 
     def deploy_and_run(
         self, contract_dir: Path, child_wasms: tuple[Path, ...], max_examples: int, id: str | None = None
     ) -> list[FuzzError]:
-        contract_metadata = read_contract_metadata(self._cargo_bin, contract_dir)
 
-        contract_kast = parse_wasm_file(contract_metadata.wasm_path)
+        is_foundry = (contract_dir / 'foundry.toml').exists()
+
+        test_contracts: list[ArbitrumContract]
+        if is_foundry:
+            foundry = Foundry(contract_dir)
+            test_contracts = [c for c in foundry.contracts.values() if is_foundry_test(c)]
+        else:
+            contract_ = StylusContract(cargo_bin=self._cargo_bin, contract_dir=contract_dir)
+            test_contracts = [contract_]
+
         child_wasm_kasts = []
-        if contract_metadata.init_func is not None:
-            if contract_metadata.init_func.arity != len(child_wasms):
-                raise TypeError(f'Expected {contract_metadata.init_func.arity} children, found {len(child_wasms)}')
-            child_wasm_kasts = [parse_wasm_file(p) for p in child_wasms]
+        child_wasm_kasts = [parse_wasm_file(p) for p in child_wasms]
 
-        init_config = self.deploy_test(contract_kast, contract_metadata.has_init, child_wasm_kasts)
+        errors: list[FuzzError] = []
+        for contract in test_contracts:
+            errors += self.deploy_and_run_contract(contract, child_wasm_kasts, max_examples, id)
+
+        return errors
+
+    def deploy_and_run_contract(
+        self, contract: ArbitrumContract, child_wasm_kasts: list[KInner], max_examples: int, id: str | None = None
+    ) -> list[FuzzError]:
+
+        contract_kast: KInner
+        if isinstance(contract, StylusContract):
+            contract_kast = wasm2kast(BytesIO(contract.deployed_bytecode))
+        else:
+            bytecode = bytes.fromhex(contract.deployed_bytecode)
+            contract_kast = bytesToken(bytecode)
+
+        setup = setup_method(contract)
+        expected_len = 0 if setup is None else len(setup.inputs)
+        if expected_len != len(child_wasm_kasts):
+            raise TypeError(f'Expected {expected_len} children, found {len(child_wasm_kasts)}')
+
+        init_config = self.deploy_test(contract_kast, setup is not None, child_wasm_kasts)
         template_conf, init_subst = split_config_from(init_config)
 
-        tests = self.select_tests(contract_metadata, id)
-        failed: list[FuzzError] = []
+        tests = self.select_tests(contract, id)
+        errors: list[FuzzError] = []
         with FuzzProgress(tests, max_examples) as progress:
             for task in progress.fuzz_tasks:
                 try:
@@ -226,9 +272,9 @@ class Skribe:
                     task.end()
                 except FuzzError as e:
                     task.fail()
-                    failed.append(e)
+                    errors.append(e)
 
-        return failed
+        return errors
 
 
 class KometFuzzHandler(KFuzzHandler):
@@ -257,20 +303,21 @@ class KometFuzzHandler(KFuzzHandler):
         calldata_kast = self.definition.krun.kore_to_kast(args[CALLDATA_EVAR])
         assert isinstance(calldata_kast, KToken)
         calldata = pretty_bytes(calldata_kast)
-        decoded = decode(self.task.binding.inputs, calldata[4:])
-        raise FuzzError(self.task.binding.name, decoded)
+        decoded = decode(self.task.binding.arg_types, calldata[4:])
+        description = f'{self.task.binding.contract_name}.{self.task.binding.name}'
+        raise FuzzError(description, decoded)
 
 
 class FuzzError(SkribeError):
-    test_name: str
+    description: str
     counterexample: tuple[Any, ...]
 
-    def __init__(self, test_name: str, counterexample: tuple[KInner, ...]):
+    def __init__(self, description: str, counterexample: tuple[KInner, ...]):
         # B042 Exception class with `__init__` should pass all args to `super().__init__()`
         # in order to work with `copy.copy()`.
-        super().__init__(test_name, counterexample)
+        super().__init__(description, counterexample)
 
-        self.test_name = test_name
+        self.description = description
         self.counterexample = counterexample
 
 

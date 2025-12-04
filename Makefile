@@ -106,12 +106,12 @@ check-black:
 
 # Optional tools
 
-SRC_FILES := $(shell find src -type f -name '*.py')
+PY_FILES := $(shell find src -type f -name '*.py')
+SRC_FILES := $(filter-out src/tests/integration/data/%, $(PY_FILES))
 
 .PHONY: pyupgrade
 pyupgrade:
 	$(UV_RUN) pyupgrade --py310-plus $(SRC_FILES)
-
 
 # Build test contracts
 

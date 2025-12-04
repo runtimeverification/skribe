@@ -34,6 +34,7 @@ def test_run_wast(program: Path, tmp_path: Path) -> None:
         check=True,
         cmap=simulation.config_vars(),
         pmap=simulation.CONFIG_VAR_PARSERS,
+        no_expand_macros=True,
     )
 
 
@@ -42,12 +43,32 @@ def test_simulation(test_file: Path) -> None:
     simulation.run(test_file, depth=None).check_returncode()
 
 
-@pytest.mark.parametrize('contract_dir', TEST_CONTRACT_DIRS, ids=str)
+BUILD_AND_FUZZ_TEST_FAIL = {
+    'test-foundry-simple': {
+        'AssertTest.test_failing_branch',
+        'AssertTest.test_assert_false',
+        'AssertTest.checkFail_assert_false',
+        'AssertTest.test_revert_branch',
+        'AssumeTest.testFail_assume_true',
+        'AssumeTest.test_assume_false',
+    }
+}
+
+
+@pytest.mark.parametrize('contract_dir', TEST_CONTRACT_DIRS, ids=lambda p: p.name)
 def test_build_and_fuzz(contract_dir: Path) -> None:
 
     skribe = Skribe(concrete_definition)
-    skribe.build_stylus_contract(contract_dir=contract_dir)
+
+    if (contract_dir / 'foundry.toml').exists():
+        skribe.build_foundry_contract(contract_dir=contract_dir)
+    else:
+        skribe.build_stylus_contract(contract_dir=contract_dir)
 
     child_wasms = _read_config_file(skribe, contract_dir)
     errors = skribe.deploy_and_run(contract_dir, child_wasms, 100)
-    assert not errors
+
+    if contract_dir.name in BUILD_AND_FUZZ_TEST_FAIL:
+        assert BUILD_AND_FUZZ_TEST_FAIL[contract_dir.name] == {e.description for e in errors}
+    else:
+        assert not errors
