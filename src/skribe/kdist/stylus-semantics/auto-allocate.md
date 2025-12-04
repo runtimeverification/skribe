@@ -2,7 +2,8 @@ Auto Allocate Host Functions
 ============================
 
 When a WebAssembly module imports a host function that has not yet been registered in the environment,
-`WASM-AUTO-ALLOCATE` creates a stub host function for that import on the fly. This removes the need for manually defining
+`WASM-AUTO-ALLOCATE` creates a stub host function for that import on the fly. 
+This removes the need for manually defining
 the `vm_hooks` module instance.
 
 The automatically allocated host function delegates execution to an internal instruction: `hostCall(MOD, FUNC, TYPE)`.
