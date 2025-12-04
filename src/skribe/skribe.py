@@ -33,7 +33,7 @@ from .kast.syntax import (
 )
 from .progress import FuzzProgress
 from .simulation import CONFIG_VAR_PARSERS, call_data, config_vars
-from .utils import SkribeError, concrete_definition, parse_wasm_file, subst_on_k_cell
+from .utils import PykHooks, SkribeError, subst_on_k_cell
 
 if TYPE_CHECKING:
     from collections.abc import Mapping
@@ -62,9 +62,15 @@ TEST_CONTRACT_ID = 0x7FA9385BE102AC3EAC297483DD6233D62B3E1496
 class Skribe:
 
     definition: SkribeDefinition
+    contract_dir: Path
 
-    def __init__(self, definition: SkribeDefinition):
+    def __init__(self, definition: SkribeDefinition, contract_dir: Path):
         self.definition = definition
+        self.contract_dir = contract_dir
+
+    @cached_property
+    def is_foundry(self) -> bool:
+        return (self.contract_dir / 'foundry.toml').exists()
 
     def _which(self, cmd: str) -> Path:
         path_str = shutil.which(cmd)
@@ -78,32 +84,30 @@ class Skribe:
     def _cargo_bin(self) -> Path:
         return self._which('cargo')
 
-    def build_stylus_contract(self, contract_dir: Path) -> None:
-        run_process(
-            [
-                str(self._cargo_bin),
-                'build',
-                '--lib',
-                '--release',
-                '--target',
-                'wasm32-unknown-unknown',
-            ],
-            cwd=contract_dir,
-            check=True,
-        )
+    def build_contract(self) -> None:
+        if self.is_foundry:
+            foundry = Foundry(self.contract_dir)
+            foundry.build(True)
+        else:
+            run_process(
+                [
+                    str(self._cargo_bin),
+                    'build',
+                    '--lib',
+                    '--release',
+                    '--target',
+                    'wasm32-unknown-unknown',
+                ],
+                cwd=self.contract_dir,
+                check=True,
+            )
 
-    def build_foundry_contract(self, contract_dir: Path) -> None:
-        foundry = Foundry(contract_dir)
-        foundry.build(True)
-
-    @staticmethod
-    def deploy_test(contract: KInner, setup: bool, child_contracts: list[KInner]) -> KInner:
+    def deploy_test(self, contract: KInner, setup: bool) -> KInner:
         """Takes a Stylus contract and its dependencies as kast terms and deploys them in a fresh configuration.
 
         Args:
             contract: The test contract to deploy, represented as a kast term.
             setup: Whether to initialize the contract by calling its 'setUp' function after deployment.
-            child_contracts: The child contracts to deploy, represented as kast terms.
 
         Returns:
             A configuration with the contract deployed.
@@ -119,19 +123,10 @@ class Skribe:
             if not setup:
                 return ()
 
-            # Set up the steps that will deploy the child contracts
-            # Contract IDs 0 and 1 are reserved
-            deploy_children = [set_contract(i, c, {}) for i, c in enumerate(child_contracts, start=2)]
-
-            data = call_data(
-                'setUp',
-                ['address'] * len(child_contracts),
-                [i.to_bytes(length=20, byteorder='big') for i in range(2, 2 + len(child_contracts))],
-            )
+            setup_call_data = call_data('setUp', [], [])
 
             return (
-                *deploy_children,
-                call_stylus(TEST_CALLER_ID, TEST_CONTRACT_ID, bytesToken(data), 0),
+                call_stylus(TEST_CALLER_ID, TEST_CONTRACT_ID, bytesToken(setup_call_data), 0),
                 check_output(EMPTY_DATA),
             )
 
@@ -148,14 +143,19 @@ class Skribe:
         )
 
         # Run the steps and grab the resulting config as a starting place to call transactions
-        proc_res = concrete_definition.krun_with_kast(
-            steps, sort=KSort('EthereumSimulation'), output=KRunOutput.KORE, cmap=config_vars(), pmap=CONFIG_VAR_PARSERS
+        proc_res = self.definition.krun_with_pyk_hooks(
+            steps,
+            sort=KSort('EthereumSimulation'),
+            output=KRunOutput.KORE,
+            cmap=config_vars(),
+            pmap=CONFIG_VAR_PARSERS,
+            hooks=PykHooks(self.contract_dir),
         )
         if proc_res.returncode:
             raise InitializationError
 
         kore_result = KoreParser(proc_res.stdout).pattern()
-        result_config = kore_to_kast(concrete_definition.kdefinition, kore_result)
+        result_config = kore_to_kast(self.definition.kdefinition, kore_result)
 
         return result_config
 
@@ -220,31 +220,24 @@ class Skribe:
 
         return tests
 
-    def deploy_and_run(
-        self, contract_dir: Path, child_wasms: tuple[Path, ...], max_examples: int, id: str | None = None
-    ) -> list[FuzzError]:
-
-        is_foundry = (contract_dir / 'foundry.toml').exists()
+    def deploy_and_run(self, max_examples: int, id: str | None = None) -> list[FuzzError]:
 
         test_contracts: list[ArbitrumContract]
-        if is_foundry:
-            foundry = Foundry(contract_dir)
+        if self.is_foundry:
+            foundry = Foundry(self.contract_dir)
             test_contracts = [c for c in foundry.contracts.values() if is_foundry_test(c)]
         else:
-            contract_ = StylusContract(cargo_bin=self._cargo_bin, contract_dir=contract_dir)
+            contract_ = StylusContract(cargo_bin=self._cargo_bin, contract_dir=self.contract_dir)
             test_contracts = [contract_]
-
-        child_wasm_kasts = []
-        child_wasm_kasts = [parse_wasm_file(p) for p in child_wasms]
 
         errors: list[FuzzError] = []
         for contract in test_contracts:
-            errors += self.deploy_and_run_contract(contract, child_wasm_kasts, max_examples, id)
+            errors += self.deploy_and_run_contract(contract, max_examples, id)
 
         return errors
 
     def deploy_and_run_contract(
-        self, contract: ArbitrumContract, child_wasm_kasts: list[KInner], max_examples: int, id: str | None = None
+        self, contract: ArbitrumContract, max_examples: int, id: str | None = None
     ) -> list[FuzzError]:
 
         contract_kast: KInner
@@ -255,11 +248,10 @@ class Skribe:
             contract_kast = bytesToken(bytecode)
 
         setup = setup_method(contract)
-        expected_len = 0 if setup is None else len(setup.inputs)
-        if expected_len != len(child_wasm_kasts):
-            raise TypeError(f'Expected {expected_len} children, found {len(child_wasm_kasts)}')
+        if setup is not None and 0 != len(setup.inputs):
+            raise TypeError('The "setUp" function cannot have any parameters')
 
-        init_config = self.deploy_test(contract_kast, setup is not None, child_wasm_kasts)
+        init_config = self.deploy_test(contract_kast, setup is not None)
         template_conf, init_subst = split_config_from(init_config)
 
         tests = self.select_tests(contract, id)
