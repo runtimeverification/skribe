@@ -56,6 +56,9 @@ interface ICheatcodes {
     /// Sets `block.timestamp`.
     function warp(uint256 new_timestamp) external;
 
+    /// Sets `block.number`.
+    function roll(uint256) external;
+
     /// Prepare an expected log with all topic and data checks enabled.
     /// Call this function, then emit an event, then call a function. Internally after the call, we check if
     /// logs were emitted in the expected order with the expected topics and data.
