@@ -47,4 +47,19 @@ impl TestCheatcodes {
         assert_eq!(self.vm().block_number(), block_number);
     }
 
+    pub fn test_store_load(&mut self, value: U256) {
+        let target = self.vm().contract_address();
+        let slot = FixedBytes::from(U256::ZERO);
+
+        // load initial value
+        let init_data = cheat().load(&mut *self, target, slot).unwrap();
+        assert_eq!(self.number.get(), init_data.into());
+
+        // store and load
+        cheat().store(&mut *self, target, slot, value.into()).unwrap();
+        let stored_data = cheat().load(&mut *self, target, slot).unwrap();
+        
+        assert_eq!(value, stored_data.into());
+        assert_eq!(value, self.number.get());
+    }
 }
