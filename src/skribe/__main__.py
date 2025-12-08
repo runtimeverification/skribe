@@ -8,7 +8,7 @@ from pyk.cli.utils import ensure_dir_path
 from rich.console import Console
 
 from .skribe import InitializationError, Skribe
-from .utils import concrete_definition
+from .utils import RECURSION_LIMIT, concrete_definition
 
 
 def _exec_build(dir_path: Path | None) -> None:
@@ -104,7 +104,7 @@ def _argument_parser() -> ArgumentParser:
 
 
 def main() -> None:
-    sys.setrecursionlimit(8000)
+    sys.setrecursionlimit(RECURSION_LIMIT)
 
     parser = _argument_parser()
     args, rest = parser.parse_known_args()

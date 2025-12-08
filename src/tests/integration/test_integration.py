@@ -7,9 +7,9 @@ from pyk.ktool.krun import _krun
 
 from skribe import simulation
 from skribe.skribe import Skribe
-from skribe.utils import concrete_definition
+from skribe.utils import RECURSION_LIMIT, concrete_definition
 
-sys.setrecursionlimit(8000)
+sys.setrecursionlimit(RECURSION_LIMIT)
 
 DATA_DIR = Path(__file__).parent / 'data'
 
