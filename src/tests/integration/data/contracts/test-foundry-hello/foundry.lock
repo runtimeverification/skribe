@@ -1,0 +1,17 @@
+{
+  "../stylus-hello-world": {
+    "rev": "38692451478deb14e41473bc569aae84091fe5d1"
+  },
+  "../test-foundry-simple/lib/forge-std": {
+    "rev": "8bbcf6e3f8f62f419e5429a0bd89331c85c37824"
+  },
+  "../test-foundry-simple/lib/kontrol-cheatcodes": {
+    "rev": "187b89ad863226afe494caa9f58320997a543bff"
+  },
+  "../test-stylus-from-foundry/lib/forge-std": {
+    "rev": "0768d9c08c085c79bb31d88683a78770764fec49"
+  },
+  "lib/forge-std": {
+    "rev": "77041d2ce690e692d6e03cc812b57d1ddaa4d505"
+  }
+}

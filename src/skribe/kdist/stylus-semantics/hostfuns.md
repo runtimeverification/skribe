@@ -235,6 +235,44 @@ Equivalent to the [`SLOAD`](https://www.evm.codes/#54) opcode in EVM.
 
 ```
 
+## static_call_contract
+
+```k
+    rule [hostCall-static-call-contract]:
+        <instrs> hostCall ( "vm_hooks" , "static_call_contract" , [ i32  i32  i32  i64  i32  .ValTypes ] -> [ i32  .ValTypes ] )
+              => pushStack(RET_LEN_PTR)
+              ~> #memLoad(DATA_PTR, DATA_LEN)
+              ~> #memLoad(CONTRACT_PTR, 20)
+              ~> #asWordFromStack
+              ~> hostCallAux("vm_hooks", "static_call_contract")
+                 ...
+        </instrs>
+        <locals>
+          0 |-> < i32 > CONTRACT_PTR
+          1 |-> < i32 > DATA_PTR
+          2 |-> < i32 > DATA_LEN
+          3 |-> < i64 > _GAS
+          4 |-> < i32 > RET_LEN_PTR
+        </locals>
+        <k> #endWasm ... </k>
+
+    rule [hostCallAux-static-call-contract]:
+        <instrs> hostCallAux ( "vm_hooks" , "static_call_contract" )
+              => #waitCommands
+                 ...
+        </instrs>
+        <k> (.K => #accessAccounts ACCTTO
+                ~> #checkCall ACCTFROM 0
+                ~> #call ACCTFROM ACCTTO ACCTTO 0 0 DATA false
+                ~> #returnStylus RET_LEN_PTR
+            ) 
+          ~> #endWasm ... 
+        </k>
+        <stylusStack> ACCTTO : (DATA : RET_LEN_PTR : S) => S </stylusStack>
+        <id> ACCTFROM </id>
+
+```
+
 ## read_return_data
 
 ```k
@@ -255,6 +293,152 @@ Equivalent to the [`SLOAD`](https://www.evm.codes/#54) opcode in EVM.
         </locals>
         <output> OUTPUT </output>
         <k> #endWasm ... </k>
+
+
+```
+
+## account_balance
+
+Gets the ETH balance of the account at the given address.
+The semantics are equivalent to the `BALANCE` opcode.
+
+```k
+
+    rule [hostCall-account-balance]:
+        <instrs> hostCall ( "vm_hooks" , "account_balance" , [ i32  i32  .ValTypes ] -> [ .ValTypes ] )
+              => pushStack(DEST_PTR)
+              ~> #memLoad(ADDR_PTR, 20)
+              ~> #asWordFromStack
+              ~> hostCallAux("vm_hooks", "account_balance")
+                 ...
+        </instrs>
+        <locals>
+          0 |-> < i32 > ADDR_PTR
+          1 |-> < i32 > DEST_PTR
+        </locals>
+        <k> #endWasm ... </k>
+
+    rule [hostCallAux-account-balance]:
+        <instrs> hostCallAux ( "vm_hooks" , "account_balance" )
+              => #memStore( DEST_PTR , Int2Bytes(32, BAL, BE) )
+              ~> #waitCommands
+                 ...
+        </instrs>
+        <stylusStack> ACCT : DEST_PTR:Int : S => S </stylusStack>
+        <account>
+          <acctID> ACCT </acctID>
+          <balance> BAL </balance>
+          ...
+        </account>
+        <k> (.K => #accessAccounts ACCT) ~> #endWasm ... </k>
+
+    rule [hostCallAux-account-balance-ow]:
+        <instrs> hostCallAux ( "vm_hooks" , "account_balance" )
+              => #memStore( DEST_PTR , Int2Bytes(32, 0, BE) )
+              ~> #waitCommands
+                 ...
+        </instrs>
+        <stylusStack> ACCT : DEST_PTR:Int : S => S </stylusStack>
+        <k> (.K => #accessAccounts ACCT) ~> #endWasm ... </k>
+      [owise]
+
+```
+
+## block_number
+
+```k
+    rule [hostCall-block-number]:
+        <instrs> hostCall ( "vm_hooks" , "block_number" , [ .ValTypes ] -> [ i64  .ValTypes ] )
+              => i64.const NUM
+                 ...
+        </instrs>
+        <locals> .Map </locals>
+         <number> NUM </number>
+        <k> #endWasm ... </k>
+```
+
+## block_timestamp
+
+```k
+    rule [hostCall-block-timestamp]:
+        <instrs> hostCall ( "vm_hooks" , "block_timestamp" , [ .ValTypes ] -> [ i64  .ValTypes ] )
+              => i64.const TS
+                 ...
+        </instrs>
+        <locals> .Map </locals>
+        <timestamp> TS </timestamp>
+        <k> #endWasm ... </k>
+```
+
+## contract_address
+
+```k
+    rule [hostCall-contract-address]:
+        <instrs> hostCall ( "vm_hooks" , "contract_address" , [ i32  .ValTypes ] -> [ .ValTypes ] )
+              => #memStore( DEST_PTR , Int2Bytes(20, ADDR, BE) )
+                 ...
+        </instrs>
+        <locals>
+          0 |-> < i32 > DEST_PTR
+        </locals>
+        <id> ADDR </id>
+        <k> #endWasm ... </k>
+```
+
+## create1
+
+```k
+    rule [hostCall-create1]:
+        <instrs> hostCall ( "vm_hooks" , "create1" , [ i32  i32  i32  i32  i32  .ValTypes ] -> [ .ValTypes ] )
+              => pushStack(REVERT_LEN_PTR)
+              ~> pushStack(CONTRACT_PTR)
+              ~> #memLoad(ENDOWMENT_PTR, 32)
+              ~> #asWordFromStack
+              ~> #memLoad(CODE_PTR, CODE_LEN)
+              ~> hostCallAux("vm_hooks", "create1")
+                 ...
+        </instrs>
+        <locals>
+          0 |-> < i32 > CODE_PTR
+          1 |-> < i32 > CODE_LEN
+          2 |-> < i32 > ENDOWMENT_PTR
+          3 |-> < i32 > CONTRACT_PTR
+          4 |-> < i32 > REVERT_LEN_PTR
+        </locals>
+        <k> #endWasm ... </k>
+
+    // TODO check valid init code
+    rule [hostCallAux-create1]:
+        <instrs> hostCallAux ( "vm_hooks" , "create1" )
+              => #waitCommands
+              ~> #returnCreateResult CONTRACT_PTR REVERT_LEN_PTR
+                 ...
+        </instrs>
+        <k> (.K => #accessAccounts #newAddr(ACCT, NONCE)
+                ~> #checkCreate ACCT ENDOWMENT
+                ~> #create ACCT #newAddr(ACCT, NONCE) ENDOWMENT CODE
+                ~> #codeDeposit #newAddr(ACCT, NONCE)
+            )
+            ~> #endWasm ...
+        </k>
+        <id> ACCT </id>
+        <account>
+          <acctID> ACCT </acctID>
+          <nonce> NONCE </nonce>
+          ...
+        </account>
+        <stylusStack> CODE:Bytes : ENDOWMENT:Int : CONTRACT_PTR:Int : REVERT_LEN_PTR:Int : S => S </stylusStack>
+
+    syntax InternalInstr ::= "#returnCreateResult" Int Int
+ // ----------------------------------------------
+    rule [returnCreateResult]:
+        <instrs> #returnCreateResult CONTRACT_PTR REVERT_LEN_PTR
+              => #memStore(REVERT_LEN_PTR, Int2Bytes(32, lengthBytes(OUT), BE))
+              ~> #memStore(CONTRACT_PTR, Int2Bytes(20, ADDR, BE))
+                 ...
+        </instrs>
+        <wordStack> ADDR : S => S </wordStack>
+        <output> OUT </output>
 
 ```
 
