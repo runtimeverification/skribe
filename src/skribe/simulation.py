@@ -26,7 +26,7 @@ from skribe.kast.syntax import (
     steps_of,
 )
 
-from .utils import concrete_definition, load_wasm
+from .utils import RECURSION_LIMIT, concrete_definition, load_wasm
 
 if TYPE_CHECKING:
     from collections.abc import Iterable
@@ -166,7 +166,7 @@ def _exec_run(test_file: Path, output: KAstOutput, depth: int | None) -> None:
 
 
 def main() -> None:
-    sys.setrecursionlimit(8000)
+    sys.setrecursionlimit(RECURSION_LIMIT)
 
     parser = _argument_parser()
     args, rest = parser.parse_known_args()
