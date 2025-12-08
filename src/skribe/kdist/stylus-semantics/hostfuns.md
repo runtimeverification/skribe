@@ -297,6 +297,52 @@ Equivalent to the [`SLOAD`](https://www.evm.codes/#54) opcode in EVM.
 
 ```
 
+## account_balance
+
+Gets the ETH balance of the account at the given address.
+The semantics are equivalent to the `BALANCE` opcode.
+
+```k
+
+    rule [hostCall-account-balance]:
+        <instrs> hostCall ( "vm_hooks" , "account_balance" , [ i32  i32  .ValTypes ] -> [ .ValTypes ] )
+              => pushStack(DEST_PTR)
+              ~> #memLoad(ADDR_PTR, 20)
+              ~> #asWordFromStack
+              ~> hostCallAux("vm_hooks", "account_balance")
+                 ...
+        </instrs>
+        <locals>
+          0 |-> < i32 > ADDR_PTR
+          1 |-> < i32 > DEST_PTR
+        </locals>
+        <k> #endWasm ... </k>
+
+    rule [hostCallAux-account-balance]:
+        <instrs> hostCallAux ( "vm_hooks" , "account_balance" )
+              => #memStore( DEST_PTR , Int2Bytes(32, BAL, BE) )
+                 ...
+        </instrs>
+        <stylusStack> ACCT : DEST_PTR:Int : S => S </stylusStack>
+        <account>
+           <acctID> ACCT </acctID>
+           <balance> BAL </balance>
+           ...
+         </account>
+        <k> (.K => #accessAccounts ACCT) ~> #endWasm ... </k>
+
+    rule [hostCallAux-account-balance-ow]:
+        <instrs> hostCallAux ( "vm_hooks" , "account_balance" )
+              => #memStore( DEST_PTR , Int2Bytes(32, 0, BE) )
+              ~> #waitCommands
+                 ...
+        </instrs>
+        <stylusStack> ACCT : DEST_PTR:Int : S => S </stylusStack>
+        <k> (.K => #accessAccounts ACCT) ~> #endWasm ... </k>
+      [owise]
+
+```
+
 ## create1
 
 ```k
