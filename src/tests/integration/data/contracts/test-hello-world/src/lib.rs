@@ -80,4 +80,11 @@ impl TestCounter {
 
         assert_eq!(self.vm().balance(alice), balance);
     }
+
+    pub fn test_warp(&mut self) {
+        let time = 123000000000u64;
+        cheat().warp(&mut *self, U256::from(time)).unwrap();
+
+        assert_eq!(self.vm().block_timestamp(), time);
+    }
 }
