@@ -1,6 +1,7 @@
 #![cfg_attr(not(any(test, feature = "export-abi")), no_main)]
 extern crate alloc;
 
+use alloy_primitives::address;
 use stylus_sdk::{alloy_primitives::U256, prelude::*};
 
 use skribe::{build_init_code, cheat};
@@ -68,5 +69,15 @@ impl TestCounter {
         let b = second.checked_add(first);
 
         assert_eq!(a, b);
+    }
+
+    pub fn test_deal(&mut self) {
+        let alice = address!("AABBCCDDEEFF0011223344556677889900AABBCC");
+        assert_eq!(self.vm().balance(alice), U256::ZERO);
+
+        let balance = U256::from(123000000000u128);
+        cheat().deal(&mut *self, alice, balance).unwrap();
+
+        assert_eq!(self.vm().balance(alice), balance);
     }
 }
