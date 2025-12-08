@@ -31,7 +31,11 @@ impl TestCheatcodes {
         assert_eq!(self.vm().balance(alice), balance);
     }
 
-    pub fn test_env_setters(&mut self) {
+    pub fn test_env_getter_setters(&mut self) {
+        // contract_address
+        let expected = address!("7FA9385BE102AC3EAC297483DD6233D62B3E1496"); // predefined address for test contracts
+        assert_eq!(expected, self.vm().contract_address());
+
         // warp
         let time = 123000000000u64;
         cheat().warp(&mut *self, U256::from(time)).unwrap();

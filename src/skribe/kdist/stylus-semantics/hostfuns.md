@@ -369,6 +369,21 @@ The semantics are equivalent to the `BALANCE` opcode.
         <k> #endWasm ... </k>
 ```
 
+## contract_address
+
+```k
+    rule [hostCall-contract-address]:
+        <instrs> hostCall ( "vm_hooks" , "contract_address" , [ i32  .ValTypes ] -> [ .ValTypes ] )
+              => #memStore( DEST_PTR , Int2Bytes(20, ADDR, BE) )
+                 ...
+        </instrs>
+        <locals>
+          0 |-> < i32 > DEST_PTR
+        </locals>
+        <id> ADDR </id>
+        <k> #endWasm ... </k>
+```
+
 ## create1
 
 ```k
