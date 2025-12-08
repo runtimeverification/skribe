@@ -321,14 +321,15 @@ The semantics are equivalent to the `BALANCE` opcode.
     rule [hostCallAux-account-balance]:
         <instrs> hostCallAux ( "vm_hooks" , "account_balance" )
               => #memStore( DEST_PTR , Int2Bytes(32, BAL, BE) )
+              ~> #waitCommands
                  ...
         </instrs>
         <stylusStack> ACCT : DEST_PTR:Int : S => S </stylusStack>
         <account>
-           <acctID> ACCT </acctID>
-           <balance> BAL </balance>
-           ...
-         </account>
+          <acctID> ACCT </acctID>
+          <balance> BAL </balance>
+          ...
+        </account>
         <k> (.K => #accessAccounts ACCT) ~> #endWasm ... </k>
 
     rule [hostCallAux-account-balance-ow]:
