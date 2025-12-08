@@ -343,6 +343,19 @@ The semantics are equivalent to the `BALANCE` opcode.
 
 ```
 
+## block_timestamp
+
+```k
+    rule [hostCall-block-timestamp]:
+        <instrs> hostCall ( "vm_hooks" , "block_timestamp" , [ .ValTypes ] -> [ i64  .ValTypes ] )
+              => i64.const TS
+                 ...
+        </instrs>
+        <locals> .Map </locals>
+        <timestamp> TS </timestamp>
+        <k> #endWasm ... </k>
+```
+
 ## create1
 
 ```k
