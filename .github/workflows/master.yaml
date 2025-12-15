@@ -9,6 +9,7 @@ jobs:
   release:
     name: 'Publish Release'
     runs-on: [self-hosted, linux, flyweight]
+    needs: [cachix-release, cachix-release-dependencies]
     steps:
       - name: 'Check out code'
         uses: actions/checkout@v4
@@ -22,3 +23,93 @@ jobs:
           set -x
           VERSION=v$(cat package/version)
           gh release create ${VERSION} --target ${{ github.sha }}
+
+  cachix-release:
+    name: 'k-framework-binary cachix release'
+    strategy:
+      matrix:
+        include:
+          - runner: ubuntu-24.04
+            os: ubuntu-24.04
+          - runner: self-macos-latest
+            os: self-macos-latest
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 120
+    steps:
+      - name: 'Check out code'
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.push.head.sha }}
+          fetch-depth: 0
+      - name: 'Install Nix'
+        if: ${{ !startsWith(matrix.os, 'self') }}
+        uses: cachix/install-nix-action@v31.5.1
+        with:
+          install_url: https://releases.nixos.org/nix/nix-2.30.1/install
+          extra_nix_config: |
+            access-tokens = github.com=${{ secrets.GITHUB_TOKEN }}
+            substituters = http://cache.nixos.org
+            trusted-public-keys = cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY=
+      - name: 'Install Cachix'
+        if: ${{ !startsWith(matrix.os, 'self') }}
+        uses: cachix/cachix-action@v16
+        with:
+          name: k-framework-binary
+      - name: 'Publish skribe to k-framework-binary cache'
+        uses: workflow/nix-shell-action@v3.4.0
+        env:
+          GC_DONT_GC: 1
+          CACHIX_AUTH_TOKEN: '${{ secrets.CACHIX_PUBLIC_TOKEN }}'
+        with:
+          packages: jq
+          script: |
+            export PATH="$(nix build github:runtimeverification/kup --no-link --json | jq -r '.[].outputs | to_entries[].value')/bin:$PATH"
+            kup publish --verbose k-framework-binary .#skribe --keep-days 180
+            kup publish --verbose k-framework-binary .#skribe.rust --keep-days 180
+
+  cachix-release-dependencies:
+    name: 'k-framework cachix release'
+    strategy:
+      matrix:
+        include:
+          - runner: ubuntu-24.04
+            os: ubuntu-24.04
+          - runner: self-macos-latest
+            os: self-macos-latest
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 120
+    steps:
+      - name: 'Check out code'
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.push.head.sha }}
+          fetch-depth: 0
+      - name: 'Install Nix'
+        if: ${{ !startsWith(matrix.os, 'self') }}
+        uses: cachix/install-nix-action@v31.5.1
+        with:
+          install_url: https://releases.nixos.org/nix/nix-2.30.1/install
+          extra_nix_config: |
+            access-tokens = github.com=${{ secrets.GITHUB_TOKEN }}
+            substituters = http://cache.nixos.org
+            trusted-public-keys = cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY=
+      - name: 'Install Cachix'
+        if: ${{ !startsWith(matrix.os, 'self') }}
+        uses: cachix/cachix-action@v16
+        with:
+          name: k-framework-binary
+      - name: 'Build and cache skribe and skribe dependencies'
+        uses: workflow/nix-shell-action@v3
+        env:
+          GC_DONT_GC: 1
+          CACHIX_AUTH_TOKEN: ${{ secrets.CACHIX_PUBLIC_TOKEN }}
+        with:
+          packages: jq
+          script: |
+            SKRIBE=$(nix build --extra-experimental-features 'nix-command flakes' .#skribe --json | jq -r '.[].outputs | to_entries[].value')
+            DRV_SKRIBE=$(nix-store --query --deriver ${SKRIBE})
+            nix-store --query --requisites --include-outputs ${DRV_SKRIBE} | cachix push k-framework
+
+            SKRIBE_RUST=$(nix build --extra-experimental-features 'nix-command flakes' .#skribe.rust --json | jq -r '.[].outputs | to_entries[].value')
+            DRV_SKRIBE_RUST=$(nix-store --query --deriver ${SKRIBE_RUST})
+            nix-store --query --requisites --include-outputs ${DRV_SKRIBE_RUST} | cachix push k-framework
