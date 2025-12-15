@@ -66,6 +66,13 @@ stdenv.mkDerivation {
         skribe-rust
       ])
     } --set KDIST_DIR $out
+
+    makeWrapper ${skribe-pyk}/bin/skribe $out/bin/skribe --prefix PATH : ${
+      lib.makeBinPath
+      ([ which k ] ++ lib.optionals (skribe-rust != null) [
+        skribe-rust
+      ])
+    } --set KDIST_DIR $out
   '';
 
   passthru = if skribe-rust == null then {
