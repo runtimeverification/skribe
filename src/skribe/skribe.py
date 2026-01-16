@@ -204,6 +204,7 @@ class Skribe:
             max_examples=max_examples,
             handler=KometFuzzHandler(self.definition, task),
             subst_func=subst_on_k_cell,
+            deadline=20000,
         )
 
     def select_tests(self, contract: ArbitrumContract, id: str | None) -> list[Method]:
