@@ -33,6 +33,23 @@ handle reentrancy explicitly.
       <k> #endWasm ... </k>
 ```
 
+## msg_sender
+
+Gets the address of the calling account.
+
+```k
+    rule [hostCall-msg-sender]:
+        <instrs> hostCall ( "vm_hooks" , "msg_sender" , [ i32  .ValTypes ] -> [ .ValTypes ] )
+              => #memStore( DEST_PTR , Int2Bytes(20, ADDR, BE) )
+                ...
+        </instrs>
+        <locals>
+          0 |-> < i32 > DEST_PTR
+        </locals>
+        <caller> ADDR </caller>
+        <k> #endWasm ... </k>
+```
+
 ## msg_value
 
 Get the ETH value in wei sent to the program.
@@ -48,6 +65,36 @@ Get the ETH value in wei sent to the program.
       </locals>
       <callValue> CALL_VALUE </callValue>
       <k> #endWasm ... </k>
+
+```
+
+## native_keccak256
+
+Computes the `keccak256` hash of the given data.
+
+```k
+    rule [hostCall-native-keccak256]:
+        <instrs> hostCall ( "vm_hooks" , "native_keccak256" , [ i32  i32  i32  .ValTypes ] -> [ .ValTypes ] )
+              => pushStack(RESULT_OFFSET)
+              ~> #memLoad(DATA_OFFSET, DATA_LEN)
+              ~> hostCallAux("vm_hooks", "native_keccak256")
+                ...
+        </instrs>
+        <locals>
+          0 |-> < i32 > DATA_OFFSET
+          1 |-> < i32 > DATA_LEN
+          2 |-> < i32 > RESULT_OFFSET
+        </locals>
+        <callValue> CALL_VALUE </callValue>
+        <k> #endWasm ... </k>
+
+    rule [hostCallAux-native-keccak256]:
+        <instrs> hostCallAux ( "vm_hooks" , "native_keccak256" )
+              => #memStore(DEST_OFFSET, Int2Bytes(32, keccak(DATA), BE))
+                ...
+        </instrs>
+        <stylusStack> DATA:Bytes : DEST_OFFSET:Int : S => S </stylusStack>
+        <k> #endWasm ... </k>
 
 ```
 
