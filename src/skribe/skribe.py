@@ -21,7 +21,7 @@ from pyk.ktool.krun import KRunOutput
 from pyk.utils import run_process
 from pykwasm.wasm2kast import wasm2kast
 
-from skribe.contract import StylusContract, argument_strategy, is_foundry_test, setup_method
+from skribe.contract import StylusContract, argument_strategy, get_arg_types, is_foundry_test, setup_method
 
 from .kast.syntax import (
     call_stylus,
@@ -300,7 +300,7 @@ class KometFuzzHandler(KFuzzHandler):
         calldata_kast = self.definition.krun.kore_to_kast(args[CALLDATA_EVAR])
         assert isinstance(calldata_kast, KToken)
         calldata = pretty_bytes(calldata_kast)
-        decoded = decode(self.task.binding.arg_types, calldata[4:])
+        decoded = decode(get_arg_types(self.task.binding), calldata[4:])
         description = f'{self.task.binding.contract_name}.{self.task.binding.name}'
         raise FuzzError(description, decoded)
 
