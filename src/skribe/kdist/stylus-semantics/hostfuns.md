@@ -266,6 +266,21 @@ Equivalent to the `TSTORE` opcode in EVM.
 ```
 
 
+## exit_early
+
+This is just a tracing (no-op) function.
+```k
+    rule [hostCall-exit-early]:
+        <instrs> hostCall ( "vm_hooks" , "exit_early" , [ i32  .ValTypes ] -> [ .ValTypes ] )
+              => .K ...
+        </instrs>
+        <locals>
+          0 |-> < i32 > _EC
+        </locals>
+        <k> #endWasm ... </k>
+
+```
+
 ## write_result
 
 ```k
