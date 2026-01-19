@@ -197,6 +197,75 @@ Equivalent to the [`SLOAD`](https://www.evm.codes/#54) opcode in EVM.
         <k> #endWasm ... </k>
 ```
 
+## transient_load_bytes32
+
+Reads a 32-byte value from transient storage.
+Equivalent to the `TLOAD` opcode in EVM.
+
+```k
+    rule [hostCall-transient-load-bytes32]:
+        <instrs> hostCall ( "vm_hooks" , "transient_load_bytes32" , [ i32  i32  .ValTypes ] -> [ .ValTypes ] )
+              => pushStack(DEST_OFFSET)
+              ~> #memLoad( KEY_OFFSET , 32 )
+              ~> hostCallAux( "vm_hooks" , "transient_load_bytes32" )
+                 ...
+        </instrs>
+        <locals>
+          0 |-> < i32 > KEY_OFFSET
+          1 |-> < i32 > DEST_OFFSET
+        </locals>
+        <k> #endWasm ... </k>
+
+    rule [hostCallAux-transient-load-bytes32]:
+        <instrs> hostCallAux ( "vm_hooks" , "transient_load_bytes32" )
+              =>  #memStore(
+                    DEST_OFFSET,
+                    Int2Bytes(32, #lookup(TSTORAGE, #asWord(KEY)), BE)
+                  )
+                 ...
+        </instrs>
+        <stylusStack> KEY:Bytes : DEST_OFFSET:Int : S => S </stylusStack>
+        <id> ACCT </id>
+        <account>
+          <acctID> ACCT </acctID>
+          <transientStorage> TSTORAGE </transientStorage>
+          ...
+        </account>
+        <k> #endWasm ... </k>
+```
+
+## transient_store_bytes32
+
+Writes a 32-byte value to transient storage.
+Equivalent to the `TSTORE` opcode in EVM.
+
+```k
+    rule [hostCall-transient-store-bytes32]:
+        <instrs> hostCall ( "vm_hooks" , "transient_store_bytes32" , [ i32  i32  .ValTypes ] -> [ .ValTypes ] )
+              => #memLoad( VAL_OFFSET , 32 )
+              ~> #memLoad( KEY_OFFSET , 32 )
+              ~> hostCallAux( "vm_hooks" , "transient_store_bytes32" )
+                 ...
+        </instrs>
+        <locals>
+          0 |-> < i32 > KEY_OFFSET
+          1 |-> < i32 > VAL_OFFSET
+        </locals>
+        <k> #endWasm ... </k>
+
+    rule [hostCallAux-transient-store-bytes32]:
+        <instrs> hostCallAux ( "vm_hooks" , "transient_store_bytes32" ) => .K ... </instrs>
+        <stylusStack> KEY:Bytes : VAL:Bytes : S => S </stylusStack>
+        <id> ACCT </id>
+        <account>
+          <acctID> ACCT </acctID>
+          <transientStorage> STORAGE => STORAGE [ #asWord(KEY) <- #asWord(VAL) ]  </transientStorage>
+          ...
+        </account>
+        <k> #endWasm ... </k>
+```
+
+
 ## write_result
 
 ```k
