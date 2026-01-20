@@ -11,6 +11,122 @@ module HOSTFUNS
 
     syntax InternalInstr ::= hostCallAux(String, String)        [symbol(hostCallAux)]
 
+    syntax InternalInstr ::= #memLoadWord( Int )
+ // ---------------------------------------------
+    rule <instrs> #memLoadWord(PTR) => #memLoad(PTR, 32) ~> #asWordFromStack ... </instrs>
+
+```
+
+## math_mul_mod
+
+```k
+    rule [hostCall-math-mul-mod]:
+        <instrs> hostCall ( "vm_hooks" , "math_mul_mod" , [ i32  i32  i32  .ValTypes ] -> [ .ValTypes ] )
+              => pushStack(VALUE_PTR)
+              ~> #memLoadWord(MODULUS_PTR)
+              ~> #memLoadWord(MULTIPLIER_PTR)
+              ~> #memLoadWord(VALUE_PTR)
+              ~> hostCallAux ( "vm_hooks" , "math_mul_mod" )
+                ...
+        </instrs>
+        <locals>
+          0 |-> < i32 > VALUE_PTR
+          1 |-> < i32 > MULTIPLIER_PTR
+          2 |-> < i32 > MODULUS_PTR
+        </locals>
+        <k> #endWasm ... </k>
+
+    rule [hostCallAux-math-mul-mod]:
+        <instrs> hostCallAux ( "vm_hooks" , "math_mul_mod" )
+              => #memStore(RES_PTR, Int2Bytes(32, (VALUE *Int MULTIPLIER) %Word MODULUS, BE))
+                ...
+        </instrs>
+        <stylusStack> VALUE : MULTIPLIER : MODULUS : RES_PTR : S => S </stylusStack>
+        <k> #endWasm ... </k>
+
+```
+
+## math_div
+
+```k
+    rule [hostCall-math-div]:
+        <instrs> hostCall ( "vm_hooks" , "math_div" , [ i32  i32  .ValTypes ] -> [ .ValTypes ] )
+              => pushStack(A_PTR)
+              ~> #memLoadWord(B_PTR)
+              ~> #memLoadWord(A_PTR)
+              ~> hostCallAux ( "vm_hooks" , "math_div" )
+                ...
+        </instrs>
+        <locals>
+          0 |-> < i32 > A_PTR
+          1 |-> < i32 > B_PTR
+        </locals>
+        <k> #endWasm ... </k>
+
+    rule [hostCallAux-math-div]:
+        <instrs> hostCallAux ( "vm_hooks" , "math_div" )
+              => #memStore(RES_PTR, Int2Bytes(32, A /Word B, BE))
+                ...
+        </instrs>
+        <stylusStack> A : B : RES_PTR : S => S </stylusStack>
+        <k> #endWasm ... </k>
+
+```
+
+## math_mod
+
+```k
+    rule [hostCall-math-mod]:
+        <instrs> hostCall ( "vm_hooks" , "math_mod" , [ i32  i32  .ValTypes ] -> [ .ValTypes ] )
+              => pushStack(A_PTR)
+              ~> #memLoadWord(B_PTR)
+              ~> #memLoadWord(A_PTR)
+              ~> hostCallAux ( "vm_hooks" , "math_mod" )
+                ...
+        </instrs>
+        <locals>
+          0 |-> < i32 > A_PTR
+          1 |-> < i32 > B_PTR
+        </locals>
+        <k> #endWasm ... </k>
+
+    rule [hostCallAux-math-mod]:
+        <instrs> hostCallAux ( "vm_hooks" , "math_mod" )
+              => #memStore(RES_PTR, Int2Bytes(32, A %Word B, BE))
+                ...
+        </instrs>
+        <stylusStack> A : B : RES_PTR : S => S </stylusStack>
+        <k> #endWasm ... </k>
+
+```
+
+## math_add_mod
+
+```k
+    rule [hostCall-math-add-mod]:
+        <instrs> hostCall ( "vm_hooks" , "math_add_mod" , [ i32  i32  i32  .ValTypes ] -> [ .ValTypes ] )
+              => pushStack(W0_PTR)
+              ~> #memLoadWord(W2_PTR)
+              ~> #memLoadWord(W1_PTR)
+              ~> #memLoadWord(W0_PTR)
+              ~> hostCallAux ( "vm_hooks" , "math_add_mod" )
+                ...
+        </instrs>
+        <locals>
+          0 |-> < i32 > W0_PTR
+          1 |-> < i32 > W1_PTR
+          2 |-> < i32 > W2_PTR
+        </locals>
+        <k> #endWasm ... </k>
+
+    rule [hostCallAux-math-add-mod]:
+        <instrs> hostCallAux ( "vm_hooks" , "math_add_mod" )
+              => #memStore(RES_PTR, Int2Bytes(32, (W0 +Int W1) %Word W2, BE))
+                ...
+        </instrs>
+        <stylusStack> W0 : W1 : W2 : RES_PTR : S => S </stylusStack>
+        <k> #endWasm ... </k>
+
 ```
 
 ## msg_reentrant
@@ -475,6 +591,50 @@ The semantics are equivalent to the `BALANCE` opcode.
 
 ```
 
+## account_codehash
+
+```k
+    rule [hostCall-account-codehash]:
+        <instrs> hostCall ( "vm_hooks" , "account_codehash" , [ i32  i32  .ValTypes ] -> [ .ValTypes ] )
+              => pushStack(DEST_PTR)
+              ~> #memLoad(ADDR_PTR, 20)
+              ~> #asWordFromStack
+              ~> hostCallAux ( "vm_hooks" , "account_codehash" )
+                 ...
+        </instrs>
+        <locals>
+          0 |-> < i32 > ADDR_PTR
+          1 |-> < i32 > DEST_PTR
+        </locals>
+        <k> #endWasm ... </k>
+
+    rule [hostCallAux-account-codehash]:
+        <instrs> hostCallAux ( "vm_hooks" , "account_codehash" )
+              => #memStore( DEST_PTR , Int2Bytes(32, keccak(CODE), BE) )
+              ~> #waitCommands
+                 ...
+        </instrs>
+        <stylusStack> ACCT : DEST_PTR:Int : S => S </stylusStack>
+        <account>
+          <acctID> ACCT </acctID>
+          <code>   CODE </code>
+          ...
+        </account>
+        <k> (.K => #accessAccounts ACCT) ~> #endWasm ... </k>
+
+
+    rule [hostCallAux-account-codehash-ow]:
+        <instrs> hostCallAux ( "vm_hooks" , "account_codehash" )
+              => #memStore( DEST_PTR , Int2Bytes(32, 0, BE) )
+              ~> #waitCommands
+                 ...
+        </instrs>
+        <stylusStack> ACCT : DEST_PTR:Int : S => S </stylusStack>
+        <k> (.K => #accessAccounts ACCT) ~> #endWasm ... </k>
+      [owise]
+```
+
+
 ## block_number
 
 ```k
@@ -484,7 +644,7 @@ The semantics are equivalent to the `BALANCE` opcode.
                  ...
         </instrs>
         <locals> .Map </locals>
-         <number> NUM </number>
+        <number> NUM </number>
         <k> #endWasm ... </k>
 ```
 
@@ -571,6 +731,18 @@ The semantics are equivalent to the `BALANCE` opcode.
         <wordStack> ADDR : S => S </wordStack>
         <output> OUT </output>
 
+```
+
+## emit_log 
+
+TODO: implement logs
+
+```k
+    rule [hostCall-emit-log]:
+      <instrs> hostCall ( "vm_hooks" , "emit_log" , [ i32  i32  i32  .ValTypes ] -> [ .ValTypes ] )
+            => .K ...
+      </instrs>
+      <k> #endWasm ... </k>
 ```
 
 ```k
