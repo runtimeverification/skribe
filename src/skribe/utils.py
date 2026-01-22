@@ -33,7 +33,7 @@ if TYPE_CHECKING:
     from pyk.kore.syntax import EVar, Pattern
     from pyk.ktool.kompile import KompileBackend
 
-RECURSION_LIMIT: Final = 16000
+RECURSION_LIMIT: Final = 20000
 
 EXIT_CODE_PYK_HOOK: Final = 2
 
