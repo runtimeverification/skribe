@@ -28,6 +28,16 @@ in
 stdenv.mkDerivation {
   pname = "skribe";
   version = if (rev != null) then rev else "dirty";
+
+  outputs = [
+    "bin"
+    # contains kdist artifacts
+    "out"
+    # this empty `dev` output is required as we otherwise get cyclic dependencies between `bin` and `out`
+    # this is due to a setup-hook creating references in a new directory `nix-support` in either `out` or `dev`
+    "dev"
+  ];
+
   buildInputs = [
     clang
     cmake
@@ -40,6 +50,7 @@ stdenv.mkDerivation {
     skribe-pyk
     k
   ];
+
   nativeBuildInputs = [ makeWrapper ];
 
   src = callPackage ../skribe-source { };
@@ -57,22 +68,24 @@ stdenv.mkDerivation {
   '';
 
   installPhase = ''
-    mkdir -p $out
-    cp -r ./kdist-*/* $out/
-    mkdir -p $out/bin
-    makeWrapper ${skribe-pyk}/bin/skribe-simulation $out/bin/skribe-simulation --prefix PATH : ${
-      lib.makeBinPath
-      ([ which k ] ++ lib.optionals (skribe-rust != null) [
-        skribe-rust
-      ])
-    } --set KDIST_DIR $out
+    mkdir -p $bin/bin
+    mkdir -p $out/kdist
 
-    makeWrapper ${skribe-pyk}/bin/skribe $out/bin/skribe --prefix PATH : ${
+    cp -r ./kdist-*/* $out/kdist/
+
+    makeWrapper ${skribe-pyk}/bin/skribe-simulation $bin/bin/skribe-simulation --prefix PATH : ${
       lib.makeBinPath
       ([ which k ] ++ lib.optionals (skribe-rust != null) [
         skribe-rust
       ])
-    } --set KDIST_DIR $out
+    } --set KDIST_DIR $out/kdist
+
+    makeWrapper ${skribe-pyk}/bin/skribe $bin/bin/skribe --prefix PATH : ${
+      lib.makeBinPath
+      ([ which k ] ++ lib.optionals (skribe-rust != null) [
+        skribe-rust
+      ])
+    } --set KDIST_DIR $out/kdist
   '';
 
   passthru = if skribe-rust == null then {
