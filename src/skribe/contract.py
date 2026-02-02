@@ -83,7 +83,7 @@ class StylusContract:
                 id=0,
                 abi=method_abi,
                 ast=None,
-                contract_name_with_path='',
+                contract_name_with_path=self.name_with_path,
                 contract_digest='',
                 contract_storage_digest='',
                 sort=KSort(f'{EVMContract.escaped(self.name_with_path, "S2K")}Method'),
