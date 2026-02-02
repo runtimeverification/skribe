@@ -91,14 +91,7 @@ class Skribe:
             foundry.build(True)
         else:
             run_process(
-                [
-                    str(self._cargo_bin),
-                    'build',
-                    '--lib',
-                    '--release',
-                    '--target',
-                    'wasm32-unknown-unknown',
-                ],
+                [str(self._cargo_bin), 'stylus', 'build'],
                 cwd=self.contract_dir,
                 check=True,
             )
