@@ -80,14 +80,7 @@ class Skribe:
 
     def build_stylus_contract(self, contract_dir: Path) -> None:
         run_process(
-            [
-                str(self._cargo_bin),
-                'build',
-                '--lib',
-                '--release',
-                '--target',
-                'wasm32-unknown-unknown',
-            ],
+            [str(self._cargo_bin), 'stylus', 'build'],
             cwd=contract_dir,
             check=True,
         )
