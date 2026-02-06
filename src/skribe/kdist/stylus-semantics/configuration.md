@@ -1,6 +1,6 @@
 
 ```k
-requires "evm.md"
+requires "kontrol.md"
 requires "auto-allocate.md"
 requires "wasm-semantics/wasm.md"
 
@@ -13,10 +13,11 @@ module STYLUS-TYPES
 endmodule
 
 module CONFIGURATION
-    imports EVM
+    imports FOUNDRY
     imports STYLUS-TYPES
     imports WASM
     imports WASM-AUTO-ALLOCATE
+    imports SWITCH-SYNTAX
 
     configuration
       <stylus>
@@ -27,7 +28,8 @@ module CONFIGURATION
             <contractModIdx> .Int </contractModIdx>
           </stylusvm>
         </stylusvms>
-        <kevm/>
+        <foundry/>
+        <parsedWasmCache> .Map </parsedWasmCache> // ACCTID:Int |-> WASMMOD:ModuleDecl
       </stylus>
 
     syntax StylusStack ::= List{StylusStackVal, ":"}  [symbol(stylusStackList)]
@@ -54,6 +56,7 @@ module CONFIGURATION
         <instrs> pushStack(V) => .K ... </instrs>
         <stylusStack> S => V : S </stylusStack>
 
+
     rule [dropStack-instr]:
         <instrs> dropStack => .K ... </instrs>
         <stylusStack> _V : S => S </stylusStack>
@@ -64,9 +67,11 @@ module CONFIGURATION
         <k> #asWordFromStack => .K ... </k>
         <stylusStack> (BS => #asWord(BS)) : _REST </stylusStack>
 
+
     rule [asWordFromStack-instr]:
         <instrs> #asWordFromStack => .K ... </instrs>
         <stylusStack> (BS => #asWord(BS)) : _REST </stylusStack>
+        <k> #endWasm ... </k>
 
 ```
 
@@ -92,14 +97,6 @@ These internal commands manages the call stack when calling and returning from a
         <callStack> ListItem({CALLSTATE | STYLUSVM}:CallStackVal) REST => REST </callStack>
         (_:CallStateCell => CALLSTATE)
         (_:StylusvmsCell => <stylusvms> STYLUSVM </stylusvms>)
-
-    syntax InternalCmd ::= "#resetCallState"
- // ---------------------------------------
-    rule [resetCallState]:
-        <k> #resetCallState => .K ... </k>
-        (_:CallStateCell => <callState> <program> .Bytes </program> ... </callState>)
-        (_:StylusvmsCell => <stylusvms> .Bag </stylusvms>)
-      [preserves-definedness] // all constant configuration cells should be defined
 
 ```
 

@@ -1,15 +1,12 @@
-TODO Upstream this module to KWasm
+Auto Allocate Host Functions
+============================
 
-Auto Allocate Host Modules
-==========================
+When a WebAssembly module imports a host function that has not yet been registered in the environment,
+`WASM-AUTO-ALLOCATE` creates a stub host function for that import on the fly. 
+This removes the need for manually defining
+the `vm_hooks` module instance.
 
-When `AUTO-ALLOCATE` is imported, an new module will be automatically created and registered whenever necessary to resolve an import.
-This makes it possible to implement host modules easily in K.
-Accessing the import will result in an instruction being left on the `instrs` cell that can't be resolved in the regular Wasm semantics.
-Instead, the embedder can add rules for handling the host import.
-
-Currently, only function imports are supported.
-Calling an imported host function will result in `hostCall(MODULE_NAME, FUNCTION_NAME, FUNCTION_TYPE)` being left on the `instrs` cell.
+The automatically allocated host function delegates execution to an internal instruction: `hostCall(MOD, FUNC, TYPE)`.
 
 ```k
 requires "wasm-semantics/wasm-text.md"
@@ -17,38 +14,6 @@ requires "wasm-semantics/wasm-text.md"
 module WASM-AUTO-ALLOCATE
     imports WASM-DATA-TOOLS
     imports WASM-TEXT
-
-    syntax Stmt ::= "newEmptyModule" WasmString
- // -------------------------------------------
-    rule <instrs> newEmptyModule MODNAME => .K ... </instrs>
-         <moduleRegistry> MR => MR [ MODNAME <- NEXT ] </moduleRegistry>
-         <nextModuleIdx> NEXT => NEXT +Int 1 </nextModuleIdx>
-         <moduleInstances> ( .Bag => <moduleInst> <modIdx> NEXT </modIdx> ... </moduleInst>) ... </moduleInstances>
-
-    syntax Stmts ::=  autoAllocModules ( ModuleDecl, Map ) [function]
-                   | #autoAllocModules ( Defns     , Map ) [function]
- // -----------------------------------------------------------------
-    rule  autoAllocModules(#module(... importDefns:IS), MR) => #autoAllocModules(IS, MR)
-```
-
-In helper function `#autoAllocModules`, the module registry map is passed along to check if the module being imported from is present.
-It is treated purely as a key set -- the actual stored values are not used or stored anywhere.
-
-```k
-    rule #autoAllocModules(.Defns, _) => .Stmts
-    rule #autoAllocModules((#import(MODULE, _, _) DS) => DS, MR) requires MODULE in_keys(MR)
-    rule #autoAllocModules((#import(MODULE, _, _) DS), MR)
-      => newEmptyModule MODULE #autoAllocModules(DS, MR [MODULE <- -1])
-      requires notBool MODULE in_keys(MR)
-
-    rule <instrs> MD:ModuleDecl
-               => sequenceStmts(autoAllocModules(MD, MR))
-               ~> MD
-              ...
-         </instrs>
-         <moduleRegistry> MR </moduleRegistry>
-      requires autoAllocModules(MD, MR) =/=K .Stmts
-      [priority(10)]
 
     syntax Instr ::= hostCall(String, String, FuncType)
  // ---------------------------------------------------
@@ -74,6 +39,7 @@ It is treated purely as a key set -- the actual stored values are not used or st
           ...
         </moduleInst>
       requires notBool NAME in_keys(EXPORTS)
+      [owise]
 
     syntax String ::= wasmString2StringStripped ( WasmString ) [function]
                     | #stripQuotes ( String ) [function]
