@@ -6,7 +6,6 @@ from pyk.kdist import kdist
 from pyk.ktool.krun import _krun
 
 from skribe import simulation
-from skribe.__main__ import _read_config_file
 from skribe.skribe import Skribe
 from skribe.utils import concrete_definition
 
@@ -58,15 +57,11 @@ BUILD_AND_FUZZ_TEST_FAIL = {
 @pytest.mark.parametrize('contract_dir', TEST_CONTRACT_DIRS, ids=lambda p: p.name)
 def test_build_and_fuzz(contract_dir: Path) -> None:
 
-    skribe = Skribe(concrete_definition)
+    skribe = Skribe(concrete_definition, contract_dir)
 
-    if (contract_dir / 'foundry.toml').exists():
-        skribe.build_foundry_contract(contract_dir=contract_dir)
-    else:
-        skribe.build_stylus_contract(contract_dir=contract_dir)
+    skribe.build_contract()
 
-    child_wasms = _read_config_file(skribe, contract_dir)
-    errors = skribe.deploy_and_run(contract_dir, child_wasms, 100)
+    errors = skribe.deploy_and_run(100)
 
     if contract_dir.name in BUILD_AND_FUZZ_TEST_FAIL:
         assert BUILD_AND_FUZZ_TEST_FAIL[contract_dir.name] == {e.description for e in errors}
