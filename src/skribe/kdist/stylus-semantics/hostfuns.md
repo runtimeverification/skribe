@@ -297,6 +297,94 @@ Equivalent to the [`SLOAD`](https://www.evm.codes/#54) opcode in EVM.
 
 ```
 
+## account_balance
+
+Gets the ETH balance of the account at the given address.
+The semantics are equivalent to the `BALANCE` opcode.
+
+```k
+
+    rule [hostCall-account-balance]:
+        <instrs> hostCall ( "vm_hooks" , "account_balance" , [ i32  i32  .ValTypes ] -> [ .ValTypes ] )
+              => pushStack(DEST_PTR)
+              ~> #memLoad(ADDR_PTR, 20)
+              ~> #asWordFromStack
+              ~> hostCallAux("vm_hooks", "account_balance")
+                 ...
+        </instrs>
+        <locals>
+          0 |-> < i32 > ADDR_PTR
+          1 |-> < i32 > DEST_PTR
+        </locals>
+        <k> #endWasm ... </k>
+
+    rule [hostCallAux-account-balance]:
+        <instrs> hostCallAux ( "vm_hooks" , "account_balance" )
+              => #memStore( DEST_PTR , Int2Bytes(32, BAL, BE) )
+              ~> #waitCommands
+                 ...
+        </instrs>
+        <stylusStack> ACCT : DEST_PTR:Int : S => S </stylusStack>
+        <account>
+          <acctID> ACCT </acctID>
+          <balance> BAL </balance>
+          ...
+        </account>
+        <k> (.K => #accessAccounts ACCT) ~> #endWasm ... </k>
+
+    rule [hostCallAux-account-balance-ow]:
+        <instrs> hostCallAux ( "vm_hooks" , "account_balance" )
+              => #memStore( DEST_PTR , Int2Bytes(32, 0, BE) )
+              ~> #waitCommands
+                 ...
+        </instrs>
+        <stylusStack> ACCT : DEST_PTR:Int : S => S </stylusStack>
+        <k> (.K => #accessAccounts ACCT) ~> #endWasm ... </k>
+      [owise]
+
+```
+
+## block_number
+
+```k
+    rule [hostCall-block-number]:
+        <instrs> hostCall ( "vm_hooks" , "block_number" , [ .ValTypes ] -> [ i64  .ValTypes ] )
+              => i64.const NUM
+                 ...
+        </instrs>
+        <locals> .Map </locals>
+         <number> NUM </number>
+        <k> #endWasm ... </k>
+```
+
+## block_timestamp
+
+```k
+    rule [hostCall-block-timestamp]:
+        <instrs> hostCall ( "vm_hooks" , "block_timestamp" , [ .ValTypes ] -> [ i64  .ValTypes ] )
+              => i64.const TS
+                 ...
+        </instrs>
+        <locals> .Map </locals>
+        <timestamp> TS </timestamp>
+        <k> #endWasm ... </k>
+```
+
+## contract_address
+
+```k
+    rule [hostCall-contract-address]:
+        <instrs> hostCall ( "vm_hooks" , "contract_address" , [ i32  .ValTypes ] -> [ .ValTypes ] )
+              => #memStore( DEST_PTR , Int2Bytes(20, ADDR, BE) )
+                 ...
+        </instrs>
+        <locals>
+          0 |-> < i32 > DEST_PTR
+        </locals>
+        <id> ADDR </id>
+        <k> #endWasm ... </k>
+```
+
 ## create1
 
 ```k

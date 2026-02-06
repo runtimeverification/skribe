@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import shutil
+import sys
 from functools import cached_property
 from io import BytesIO
 from pathlib import Path
@@ -33,7 +34,7 @@ from .kast.syntax import (
 )
 from .progress import FuzzProgress
 from .simulation import CONFIG_VAR_PARSERS, call_data, config_vars
-from .utils import PykHooks, SkribeError, subst_on_k_cell
+from .utils import RECURSION_LIMIT, PykHooks, SkribeError, subst_on_k_cell
 
 if TYPE_CHECKING:
     from collections.abc import Mapping
@@ -282,6 +283,10 @@ class KometFuzzHandler(KFuzzHandler):
         self.failed = False
 
     def handle_test(self, args: Mapping[EVar, Pattern]) -> None:
+        # Hypothesis resets the recursion limit before each test run.
+        # We override it here so large Kore terms don't exceed the limit.
+        sys.setrecursionlimit(RECURSION_LIMIT)
+
         # Hypothesis reruns failing examples to confirm the failure.
         # To avoid misleading progress updates, the progress bar is not advanced
         # when a test fails and Hypothesis reruns the same example.
