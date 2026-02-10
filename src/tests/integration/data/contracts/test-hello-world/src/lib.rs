@@ -1,11 +1,12 @@
 #![cfg_attr(not(any(test, feature = "export-abi")), no_main)]
 extern crate alloc;
 
-use stylus_sdk::{alloy_primitives::U256, prelude::*};
+use stylus_sdk::{
+    alloy_primitives::{address, FixedBytes, U256},
+    prelude::*,
+};
 
-use crate::skribe::{build_init_code, new_cheatcodes};
-
-mod skribe;
+use skribe::{build_init_code, cheat};
 
 sol_interface! {
   interface ICounter {
@@ -15,7 +16,6 @@ sol_interface! {
   }
 }
 
-// `Counter` will be the entrypoint.
 sol_storage! {
     #[entrypoint]
     pub struct TestCounter {
@@ -29,12 +29,10 @@ const COUNTER_BYTECODE_PATH: &str =
 
 #[public]
 impl TestCounter {
-    pub fn setUp(&mut self) {
+    pub fn set_up(&mut self) {
         self.number.set(U256::from(123));
 
-        let cheatcodes = new_cheatcodes();
-
-        let bytecode = cheatcodes
+        let bytecode = cheat()
             .read_file_binary(&mut *self, COUNTER_BYTECODE_PATH.to_string())
             .unwrap();
         let counter_address = unsafe {
@@ -58,9 +56,7 @@ impl TestCounter {
     }
 
     pub fn test_call_increment(&mut self, x: U256) {
-        if x >= U256::MAX {
-            return;
-        }
+        cheat().assume(&mut *self, x < U256::MAX).unwrap();
 
         let counter = ICounter::new(self.counter.get());
         counter.set_number(&mut *self, x).unwrap();
@@ -75,4 +71,5 @@ impl TestCounter {
 
         assert_eq!(a, b);
     }
+
 }

@@ -1,5 +1,5 @@
-use alloy_primitives::address;
-use stylus_sdk::prelude::sol_interface;
+use stylus_sdk::alloy_primitives::{address, Address};
+use stylus_sdk::prelude::*;
 
 sol_interface! {
 
@@ -56,6 +56,9 @@ interface ICheatcodes {
     /// Sets `block.timestamp`.
     function warp(uint256 new_timestamp) external;
 
+    /// Sets `block.number`.
+    function roll(uint256) external;
+
     /// Prepare an expected log with all topic and data checks enabled.
     /// Call this function, then emit an event, then call a function. Internally after the call, we check if
     /// logs were emitted in the expected order with the expected topics and data.
@@ -68,10 +71,9 @@ interface ICheatcodes {
 
 }
 
-pub const CHEATCODE_ADDRESS: alloy_primitives::Address =
-    address!("0x7109709ECFA91A80626FF3989D68F67F5B1DD12D");
+pub const CHEATCODE_ADDRESS: Address = address!("0x7109709ECFA91A80626FF3989D68F67F5B1DD12D");
 
-pub fn new_cheatcodes() -> ICheatcodes {
+pub fn cheat() -> ICheatcodes {
     ICheatcodes::new(CHEATCODE_ADDRESS)
 }
 
