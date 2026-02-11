@@ -91,14 +91,7 @@ class Skribe:
             foundry.build(True)
         else:
             run_process(
-                [
-                    str(self._cargo_bin),
-                    'build',
-                    '--lib',
-                    '--release',
-                    '--target',
-                    'wasm32-unknown-unknown',
-                ],
+                [str(self._cargo_bin), 'stylus', 'build'],
                 cwd=self.contract_dir,
                 check=True,
             )
@@ -196,6 +189,7 @@ class Skribe:
         template_config_kore = kast_to_kore(self.definition.kdefinition, template_config, GENERATED_TOP_CELL)
         template_subst = {CALLDATA_EVAR: argument_strategy(binding).map(calldata_to_kore)}
 
+        task.start()
         fuzz(
             self.definition.path,
             template_config_kore,
@@ -205,6 +199,7 @@ class Skribe:
             handler=KometFuzzHandler(self.definition, task),
             subst_func=subst_on_k_cell,
         )
+        task.end()
 
     def select_tests(self, contract: ArbitrumContract, id: str | None) -> list[Method]:
         test_methods = []
@@ -260,9 +255,7 @@ class Skribe:
         with FuzzProgress(tests, max_examples) as progress:
             for task in progress.fuzz_tasks:
                 try:
-                    task.start()
                     self.run_test(template_conf, init_subst, task.binding, max_examples, task)
-                    task.end()
                 except FuzzError as e:
                     task.fail()
                     errors.append(e)
