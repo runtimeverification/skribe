@@ -128,6 +128,12 @@ module SKRIBE
 
 ```
 
+### Patches for Skribe tests
+
+```k
+    rule #hasValidInitCode(_MEMWIDTH, _SCHED) => true       [priority(10)]
+```
+
 ### Cheatcode calling mechanism for Skribe
 
 ```k

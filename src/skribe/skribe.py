@@ -21,7 +21,7 @@ from pyk.ktool.krun import KRunOutput
 from pyk.utils import run_process
 from pykwasm.wasm2kast import wasm2kast
 
-from skribe.contract import StylusContract, argument_strategy, is_foundry_test, setup_method
+from skribe.contract import StylusContract, argument_strategy, get_arg_types, is_foundry_test, setup_method
 
 from .kast.syntax import (
     call_stylus,
@@ -91,14 +91,7 @@ class Skribe:
             foundry.build(True)
         else:
             run_process(
-                [
-                    str(self._cargo_bin),
-                    'build',
-                    '--lib',
-                    '--release',
-                    '--target',
-                    'wasm32-unknown-unknown',
-                ],
+                [str(self._cargo_bin), 'stylus', 'build'],
                 cwd=self.contract_dir,
                 check=True,
             )
@@ -196,6 +189,7 @@ class Skribe:
         template_config_kore = kast_to_kore(self.definition.kdefinition, template_config, GENERATED_TOP_CELL)
         template_subst = {CALLDATA_EVAR: argument_strategy(binding).map(calldata_to_kore)}
 
+        task.start()
         fuzz(
             self.definition.path,
             template_config_kore,
@@ -204,7 +198,9 @@ class Skribe:
             max_examples=max_examples,
             handler=KometFuzzHandler(self.definition, task),
             subst_func=subst_on_k_cell,
+            deadline=20000,
         )
+        task.end()
 
     def select_tests(self, contract: ArbitrumContract, id: str | None) -> list[Method]:
         test_methods = []
@@ -260,9 +256,7 @@ class Skribe:
         with FuzzProgress(tests, max_examples) as progress:
             for task in progress.fuzz_tasks:
                 try:
-                    task.start()
                     self.run_test(template_conf, init_subst, task.binding, max_examples, task)
-                    task.end()
                 except FuzzError as e:
                     task.fail()
                     errors.append(e)
@@ -300,7 +294,7 @@ class KometFuzzHandler(KFuzzHandler):
         calldata_kast = self.definition.krun.kore_to_kast(args[CALLDATA_EVAR])
         assert isinstance(calldata_kast, KToken)
         calldata = pretty_bytes(calldata_kast)
-        decoded = decode(self.task.binding.arg_types, calldata[4:])
+        decoded = decode(get_arg_types(self.task.binding), calldata[4:])
         description = f'{self.task.binding.contract_name}.{self.task.binding.name}'
         raise FuzzError(description, decoded)
 
