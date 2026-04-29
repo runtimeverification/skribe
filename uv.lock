@@ -1177,8 +1177,8 @@ wheels = [
 
 [[package]]
 name = "py-wasm"
-version = "0.2.0"
-source = { git = "https://github.com/runtimeverification/py-wasm.git?rev=0.2.1#e5fb6ed5b1aebf1c0d67087397b3c1240ff412da" }
+version = "0.3.0"
+source = { git = "https://github.com/runtimeverification/py-wasm.git?rev=0.3.0#07677b120f40b86d5b7839e2dde42889967dcfce" }
 dependencies = [
     { name = "cytoolz", marker = "implementation_name == 'cpython'" },
     { name = "mypy-extensions" },
@@ -1404,8 +1404,8 @@ wheels = [
 
 [[package]]
 name = "pykwasm"
-version = "0.1.142"
-source = { git = "https://github.com/runtimeverification/wasm-semantics.git?subdirectory=pykwasm&rev=v0.1.142#9efca0cc12aca85d15cf0db28d7aa21c20cf7da7" }
+version = "0.1.153"
+source = { git = "https://github.com/runtimeverification/wasm-semantics.git?subdirectory=pykwasm&rev=v0.1.153#6fecaa4bc3cdba078f1235515a2a318c809db1df" }
 dependencies = [
     { name = "kframework" },
     { name = "py-wasm" },
@@ -1848,7 +1848,7 @@ dev = [
 [package.metadata]
 requires-dist = [
     { name = "kontrol", git = "https://github.com/runtimeverification/kontrol.git?rev=94ae57f" },
-    { name = "pykwasm", git = "https://github.com/runtimeverification/wasm-semantics.git?subdirectory=pykwasm&rev=v0.1.142" },
+    { name = "pykwasm", git = "https://github.com/runtimeverification/wasm-semantics.git?subdirectory=pykwasm&rev=v0.1.153" },
 ]
 
 [package.metadata.requires-dev]
