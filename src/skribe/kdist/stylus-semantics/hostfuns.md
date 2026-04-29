@@ -449,16 +449,23 @@ This is just a tracing (no-op) function.
               => #waitCommands
                  ...
         </instrs>
-        <k> (.K => #accessAccounts ACCTTO
-                ~> #checkCall ACCTFROM VALUE
-                ~> #call ACCTFROM ACCTTO ACCTTO VALUE VALUE DATA false
-                ~> #returnStylus RET_LEN_PTR
-            ) 
+        <k> (.K => #callStylus ACCTTO ACCTTO VALUE VALUE DATA false RET_LEN_PTR ) 
           ~> #endWasm ... 
         </k>
         <stylusStack> ACCTTO : (DATA : VALUE : RET_LEN_PTR : S) => S </stylusStack>
-        <id> ACCTFROM </id>
 
+
+    syntax InternalCmd ::= "#callStylus" Int Int Int Int Bytes Bool Int
+ // ------------------------------------
+    rule [callStylus]:
+        <k> #callStylus ACCTTO ACCTCODE VALUE APPVALUE ARGS STATIC RET_LEN_PTR
+         => #accessAccounts ACCTTO
+         ~> #checkCall ACCTFROM VALUE
+         ~> #call ACCTFROM ACCTTO ACCTTO VALUE APPVALUE ARGS STATIC
+         ~> #returnStylus RET_LEN_PTR
+            ...
+        </k>
+        <id> ACCTFROM </id>
 
     syntax InternalCmd ::= "#returnStylus" Int
  // ------------------------------------------
@@ -508,15 +515,10 @@ This is just a tracing (no-op) function.
               => #waitCommands
                  ...
         </instrs>
-        <k> (.K => #accessAccounts ACCTTO
-                ~> #checkCall ACCTFROM 0
-                ~> #call ACCTFROM ACCTTO ACCTTO 0 0 DATA false
-                ~> #returnStylus RET_LEN_PTR
-            ) 
+        <k> (.K => #callStylus ACCTTO ACCTTO 0 0 DATA true RET_LEN_PTR )
           ~> #endWasm ... 
         </k>
         <stylusStack> ACCTTO : (DATA : RET_LEN_PTR : S) => S </stylusStack>
-        <id> ACCTFROM </id>
 
 ```
 
