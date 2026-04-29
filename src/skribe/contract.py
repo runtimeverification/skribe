@@ -6,6 +6,7 @@ from functools import cached_property, partial
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, TypeAlias
 
+from eth_abi.grammar import TupleType, parse
 from eth_abi.tools._strategies import get_abi_strategy
 from hypothesis import strategies
 from kontrol.solc_to_k import Contract as EVMContract
@@ -119,8 +120,30 @@ def is_foundry_test(ctr: EVMContract) -> bool:
     return False
 
 
+def get_arg_types(m: Method) -> tuple[str, ...]:
+    """
+    Return the argument type strings of a method.
+
+    This function exists because `Method.arg_types` flattens tuple arguments,
+    into their component types. That flattening loses information about the
+    original ABI shape (for example, whether an argument was a tuple or an
+    array of tuples).
+    """
+
+    sig = m.signature
+    arg_types_from_sig = sig[sig.index('(') :]
+
+    if arg_types_from_sig == '()':
+        return ()
+    else:
+        parsed_arg_types = parse(arg_types_from_sig)
+        assert isinstance(parsed_arg_types, TupleType)
+        return tuple(c.to_type_str() for c in parsed_arg_types.components)
+
+
 def argument_strategy(m: Method) -> SearchStrategy[bytes]:
-    input_strategies = (get_abi_strategy(arg) for arg in m.arg_types)
+    arg_types = get_arg_types(m)
+    input_strategies = (get_abi_strategy(arg) for arg in arg_types)
     tuple_strategy = strategies.tuples(*input_strategies)
-    encoder = partial(call_data, m.name, m.arg_types)
+    encoder = partial(call_data, m.name, arg_types)
     return tuple_strategy.map(encoder)
