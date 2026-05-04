@@ -153,8 +153,7 @@ class Skribe:
 
     def run_test(
         self,
-        conf: KInner,
-        subst: dict[str, KInner],
+        template_pattern: Pattern,
         binding: Method,
         max_examples: int,
         task: FuzzTask,
@@ -162,9 +161,7 @@ class Skribe:
         """Given a configuration with a deployed test contract, fuzz over the tests for the supplied binding.
 
         Args:
-            conf: The template configuration.
-            subst: A substitution mapping such that 'Subst(subst).apply(conf)' gives the initial configuration with the
-                   deployed contract.
+            template_pattern: The template KORE configuration.
             binding: The contract binding that specifies the test name and parameters.
             max_examples: The maximum number of fuzzing test cases to generate and execute.
 
@@ -175,22 +172,12 @@ class Skribe:
         def calldata_to_kore(data: bytes) -> Pattern:
             return kast_to_kore(self.definition.kdefinition, bytesToken(data), BYTES)
 
-        k_steps = [
-            set_exit_code(1),
-            call_stylus(TEST_CALLER_ID, TEST_CONTRACT_ID, CALLDATA, 0),
-            check_foundry_success(),
-            set_exit_code(0),
-        ]
-        subst['K_CELL'] = steps_of(k_steps)
-
-        template_config = Subst(subst).apply(conf)
-        template_config_kore = kast_to_kore(self.definition.kdefinition, template_config, GENERATED_TOP_CELL)
         template_subst = {CALLDATA_EVAR: argument_strategy(binding).map(calldata_to_kore)}
 
         task.start()
         fuzz(
             self.definition.path,
-            template_config_kore,
+            template_pattern,
             template_subst,
             check_exit_code=True,
             max_examples=max_examples,
@@ -248,13 +235,22 @@ class Skribe:
 
         init_config = self.deploy_test(contract_kast, setup is not None)
         template_conf, init_subst = split_config_from(init_config)
+        k_steps = [
+            set_exit_code(1),
+            call_stylus(TEST_CALLER_ID, TEST_CONTRACT_ID, CALLDATA, 0),
+            check_foundry_success(),
+            set_exit_code(0),
+        ]
+        init_subst['K_CELL'] = steps_of(k_steps)
+        template_conf = Subst(init_subst).apply(template_conf)
+        template_pattern = kast_to_kore(self.definition.kdefinition, template_conf, GENERATED_TOP_CELL)
 
         tests = self.select_tests(contract, id)
         errors: list[FuzzError] = []
         with FuzzProgress(tests, max_examples) as progress:
             for task in progress.fuzz_tasks:
                 try:
-                    self.run_test(template_conf, init_subst, task.binding, max_examples, task)
+                    self.run_test(template_pattern, task.binding, max_examples, task)
                 except FuzzError as e:
                     task.fail()
                     errors.append(e)
