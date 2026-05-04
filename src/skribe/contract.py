@@ -4,7 +4,7 @@ import json
 from dataclasses import dataclass
 from functools import cached_property, partial
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, TypeAlias
+from typing import TYPE_CHECKING, Any, NamedTuple, TypeAlias
 
 from eth_abi.grammar import TupleType, parse
 from eth_abi.tools._strategies import get_abi_strategy
@@ -140,9 +140,21 @@ def get_arg_types(m: Method) -> tuple[str, ...]:
         return tuple(c.to_type_str() for c in parsed_arg_types.components)
 
 
-def argument_strategy(m: Method) -> SearchStrategy[bytes]:
-    arg_types = get_arg_types(m)
-    input_strategies = (get_abi_strategy(arg) for arg in arg_types)
-    tuple_strategy = strategies.tuples(*input_strategies)
-    encoder = partial(call_data, m.name, arg_types)
-    return tuple_strategy.map(encoder)
+class Signature(NamedTuple):
+    contract_name: str
+    name: str
+    arg_types: tuple[str, ...]
+
+    @staticmethod
+    def from_method(method: Method) -> Signature:
+        return Signature(
+            contract_name=method.contract_name,
+            name=method.name,
+            arg_types=get_arg_types(method),
+        )
+
+    def argument_strategy(self) -> SearchStrategy[bytes]:
+        input_strategies = (get_abi_strategy(arg) for arg in self.arg_types)
+        tuple_strategy = strategies.tuples(*input_strategies)
+        encoder = partial(call_data, self.name, self.arg_types)
+        return tuple_strategy.map(encoder)

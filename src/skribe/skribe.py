@@ -21,7 +21,7 @@ from pyk.ktool.krun import KRunOutput
 from pyk.utils import run_process
 from pykwasm.wasm2kast import wasm2kast
 
-from .contract import StylusContract, argument_strategy, get_arg_types, is_foundry_test, setup_method
+from .contract import Signature, StylusContract, get_arg_types, is_foundry_test, setup_method
 from .kast.syntax import (
     call_stylus,
     check_foundry_success,
@@ -172,7 +172,7 @@ class Skribe:
         def calldata_to_kore(data: bytes) -> Pattern:
             return kast_to_kore(self.definition.kdefinition, bytesToken(data), BYTES)
 
-        template_subst = {CALLDATA_EVAR: argument_strategy(binding).map(calldata_to_kore)}
+        template_subst = {CALLDATA_EVAR: Signature.from_method(binding).argument_strategy().map(calldata_to_kore)}
 
         task.start()
         fuzz(
