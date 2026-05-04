@@ -14,10 +14,9 @@ from kontrol.solc_to_k import contract_name_with_path, method_sig_from_abi
 from pyk.kast.inner import KSort
 from pyk.utils import run_process, single
 
-from skribe.simulation import call_data
+from .simulation import call_data
 
 if TYPE_CHECKING:
-
     from hypothesis.strategies import SearchStrategy
 
 

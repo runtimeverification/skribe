@@ -21,8 +21,7 @@ from pyk.ktool.krun import KRunOutput
 from pyk.utils import run_process
 from pykwasm.wasm2kast import wasm2kast
 
-from skribe.contract import StylusContract, argument_strategy, get_arg_types, is_foundry_test, setup_method
-
+from .contract import StylusContract, argument_strategy, get_arg_types, is_foundry_test, setup_method
 from .kast.syntax import (
     call_stylus,
     check_foundry_success,
@@ -61,7 +60,6 @@ TEST_CONTRACT_ID = 0x7FA9385BE102AC3EAC297483DD6233D62B3E1496
 
 
 class Skribe:
-
     definition: SkribeDefinition
     contract_dir: Path
 
