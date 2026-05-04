@@ -119,27 +119,6 @@ def is_foundry_test(ctr: EVMContract) -> bool:
     return False
 
 
-def get_arg_types(m: Method) -> tuple[str, ...]:
-    """
-    Return the argument type strings of a method.
-
-    This function exists because `Method.arg_types` flattens tuple arguments,
-    into their component types. That flattening loses information about the
-    original ABI shape (for example, whether an argument was a tuple or an
-    array of tuples).
-    """
-
-    sig = m.signature
-    arg_types_from_sig = sig[sig.index('(') :]
-
-    if arg_types_from_sig == '()':
-        return ()
-    else:
-        parsed_arg_types = parse(arg_types_from_sig)
-        assert isinstance(parsed_arg_types, TupleType)
-        return tuple(c.to_type_str() for c in parsed_arg_types.components)
-
-
 class Signature(NamedTuple):
     contract_name: str
     name: str
@@ -150,8 +129,29 @@ class Signature(NamedTuple):
         return Signature(
             contract_name=method.contract_name,
             name=method.name,
-            arg_types=get_arg_types(method),
+            arg_types=Signature._extract_arg_types(method),
         )
+
+    @staticmethod
+    def _extract_arg_types(method: Method) -> tuple[str, ...]:
+        """
+        Return the argument type strings of a method.
+
+        This function exists because `Method.arg_types` flattens tuple arguments,
+        into their component types. That flattening loses information about the
+        original ABI shape (for example, whether an argument was a tuple or an
+        array of tuples).
+        """
+
+        sig = method.signature
+        arg_types_from_sig = sig[sig.index('(') :]
+
+        if arg_types_from_sig == '()':
+            return ()
+        else:
+            parsed_arg_types = parse(arg_types_from_sig)
+            assert isinstance(parsed_arg_types, TupleType)
+            return tuple(c.to_type_str() for c in parsed_arg_types.components)
 
     @property
     def qualified_name(self) -> str:
