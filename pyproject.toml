@@ -47,6 +47,9 @@ dev = [
 [tool.hatch.metadata]
 allow-direct-references = true
 
+[tool.hatch.build.targets.sdist]
+exclude = ["src/tests/"]
+
 [tool.isort]
 profile = "black"
 line_length = 120
