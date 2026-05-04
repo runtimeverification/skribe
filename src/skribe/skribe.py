@@ -221,7 +221,20 @@ class Skribe:
     def deploy_and_run_contract(
         self, contract: ArbitrumContract, max_examples: int, id: str | None = None
     ) -> list[FuzzError]:
+        template_pattern = self.create_template_pattern(contract)
+        tests = self.select_tests(contract, id)
+        errors: list[FuzzError] = []
+        with FuzzProgress(tests, max_examples) as progress:
+            for task in progress.fuzz_tasks:
+                try:
+                    self.run_test(template_pattern, task.binding, max_examples, task)
+                except FuzzError as e:
+                    task.fail()
+                    errors.append(e)
 
+        return errors
+
+    def create_template_pattern(self, contract: ArbitrumContract) -> Pattern:
         contract_kast: KInner
         if isinstance(contract, StylusContract):
             contract_kast = wasm2kast(BytesIO(contract.deployed_bytecode))
@@ -245,17 +258,7 @@ class Skribe:
         template_conf = Subst(init_subst).apply(template_conf)
         template_pattern = kast_to_kore(self.definition.kdefinition, template_conf, GENERATED_TOP_CELL)
 
-        tests = self.select_tests(contract, id)
-        errors: list[FuzzError] = []
-        with FuzzProgress(tests, max_examples) as progress:
-            for task in progress.fuzz_tasks:
-                try:
-                    self.run_test(template_pattern, task.binding, max_examples, task)
-                except FuzzError as e:
-                    task.fail()
-                    errors.append(e)
-
-        return errors
+        return template_pattern
 
 
 class KometFuzzHandler(KFuzzHandler):
