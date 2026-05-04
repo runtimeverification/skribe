@@ -5,7 +5,7 @@ import sys
 from functools import cached_property
 from io import BytesIO
 from pathlib import Path
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, NamedTuple
 
 from eth_abi import decode, encode
 from kontrol.foundry import Foundry
@@ -36,14 +36,13 @@ from .simulation import CONFIG_VAR_PARSERS, call_data, config_vars
 from .utils import RECURSION_LIMIT, PykHooks, SkribeError, subst_on_k_cell
 
 if TYPE_CHECKING:
-    from collections.abc import Mapping
+    from collections.abc import Iterable, Mapping
     from typing import Any
 
     from pyk.kast.inner import KInner
     from pyk.kore.syntax import Pattern
 
-    from skribe.contract import ArbitrumContract, Method
-
+    from .contract import ArbitrumContract
     from .progress import FuzzTask
     from .utils import SkribeDefinition
 
@@ -57,6 +56,25 @@ EMPTY_DATA = encode([], [])
 CHEATCODE_ID = 0x7109709ECFA91A80626FF3989D68F67F5B1DD12D
 TEST_CALLER_ID = 0x1804C8AB1F12E6BBF3894D4083F33E07309D1F38
 TEST_CONTRACT_ID = 0x7FA9385BE102AC3EAC297483DD6233D62B3E1496
+
+
+class FuzzSpec(NamedTuple):
+    template: Pattern
+    signatures: tuple[Signature, ...]
+
+    @property
+    def dict(self) -> dict[str, Any]:
+        return {
+            'template': self.template.text,
+            'signatures': [
+                {
+                    'contract_name': signature.contract_name,
+                    'name': signature.name,
+                    'arg_types': list(signature.arg_types),
+                }
+                for signature in self.signatures
+            ],
+        }
 
 
 class Skribe:
@@ -187,21 +205,6 @@ class Skribe:
         )
         task.end()
 
-    def select_tests(self, contract: ArbitrumContract, id: str | None) -> list[Method]:
-        test_methods = []
-        for m in contract.methods:
-            if m.is_test:
-                test_methods.append(m)
-
-        if id is None:
-            tests = test_methods
-        else:
-            tests = [b for b in test_methods if b.name == id]
-            if not tests:
-                raise KeyError(f'Test function {id!r} not found.')
-
-        return tests
-
     def deploy_and_run(self, max_examples: int, id: str | None = None) -> list[FuzzError]:
 
         test_contracts: list[ArbitrumContract]
@@ -221,21 +224,24 @@ class Skribe:
     def deploy_and_run_contract(
         self, contract: ArbitrumContract, max_examples: int, id: str | None = None
     ) -> list[FuzzError]:
-        template_pattern = self.create_template_pattern(contract)
-
-        tests = self.select_tests(contract, id)
-        signatures = [Signature.from_method(test) for test in tests]
+        spec = self.create_spec(contract)
+        signatures = _filter_signatures(spec.signatures, id=id)
 
         errors: list[FuzzError] = []
         with FuzzProgress(signatures, max_examples) as progress:
             for task in progress.fuzz_tasks:
                 try:
-                    self.run_test(template_pattern, task.signature, max_examples, task)
+                    self.run_test(spec.template, task.signature, max_examples, task)
                 except FuzzError as e:
                     task.fail()
                     errors.append(e)
 
         return errors
+
+    def create_spec(self, contract: ArbitrumContract) -> FuzzSpec:
+        template = self.create_template_pattern(contract)
+        signatures = tuple(Signature.from_method(method) for method in contract.methods if method.is_test)
+        return FuzzSpec(template=template, signatures=signatures)
 
     def create_template_pattern(self, contract: ArbitrumContract) -> Pattern:
         contract_kast: KInner
@@ -313,3 +319,15 @@ class FuzzError(SkribeError):
 
 
 class InitializationError(SkribeError): ...
+
+
+def _filter_signatures(signatures: Iterable[Signature], id: str | None) -> list[Signature]:
+    if id is None:
+        return list(signatures)
+
+    else:
+        res = [sig for sig in signatures if sig.name == id]
+        if res:
+            raise KeyError(f'Test function {id!r} not found.')
+
+    return res
