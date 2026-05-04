@@ -21,7 +21,7 @@ from pyk.ktool.krun import KRunOutput
 from pyk.utils import run_process
 from pykwasm.wasm2kast import wasm2kast
 
-from .contract import Signature, StylusContract, get_arg_types, is_foundry_test, setup_method
+from .contract import Signature, StylusContract, is_foundry_test, setup_method
 from .kast.syntax import (
     call_stylus,
     check_foundry_success,
@@ -154,15 +154,15 @@ class Skribe:
     def run_test(
         self,
         template_pattern: Pattern,
-        binding: Method,
+        signature: Signature,
         max_examples: int,
         task: FuzzTask,
     ) -> None:
-        """Given a configuration with a deployed test contract, fuzz over the tests for the supplied binding.
+        """Given a configuration with a deployed test contract, fuzz over the tests for the supplied signature.
 
         Args:
             template_pattern: The template KORE configuration.
-            binding: The contract binding that specifies the test name and parameters.
+            signature: The signature of the test to fuzz over.
             max_examples: The maximum number of fuzzing test cases to generate and execute.
 
         Raises:
@@ -172,7 +172,7 @@ class Skribe:
         def calldata_to_kore(data: bytes) -> Pattern:
             return kast_to_kore(self.definition.kdefinition, bytesToken(data), BYTES)
 
-        template_subst = {CALLDATA_EVAR: Signature.from_method(binding).argument_strategy().map(calldata_to_kore)}
+        template_subst = {CALLDATA_EVAR: signature.argument_strategy().map(calldata_to_kore)}
 
         task.start()
         fuzz(
@@ -222,12 +222,15 @@ class Skribe:
         self, contract: ArbitrumContract, max_examples: int, id: str | None = None
     ) -> list[FuzzError]:
         template_pattern = self.create_template_pattern(contract)
+
         tests = self.select_tests(contract, id)
+        signatures = [Signature.from_method(test) for test in tests]
+
         errors: list[FuzzError] = []
-        with FuzzProgress(tests, max_examples) as progress:
+        with FuzzProgress(signatures, max_examples) as progress:
             for task in progress.fuzz_tasks:
                 try:
-                    self.run_test(template_pattern, task.binding, max_examples, task)
+                    self.run_test(template_pattern, task.signature, max_examples, task)
                 except FuzzError as e:
                     task.fail()
                     errors.append(e)
@@ -291,8 +294,8 @@ class KometFuzzHandler(KFuzzHandler):
         calldata_kast = self.definition.krun.kore_to_kast(args[CALLDATA_EVAR])
         assert isinstance(calldata_kast, KToken)
         calldata = pretty_bytes(calldata_kast)
-        decoded = decode(get_arg_types(self.task.binding), calldata[4:])
-        description = f'{self.task.binding.contract_name}.{self.task.binding.name}'
+        decoded = decode(self.task.signature.arg_types, calldata[4:])
+        description = self.task.signature.qualified_name
         raise FuzzError(description, decoded)
 
 

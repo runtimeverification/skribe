@@ -153,6 +153,10 @@ class Signature(NamedTuple):
             arg_types=get_arg_types(method),
         )
 
+    @property
+    def qualified_name(self) -> str:
+        return f'{self.contract_name}.{self.name}'
+
     def argument_strategy(self) -> SearchStrategy[bytes]:
         input_strategies = (get_abi_strategy(arg) for arg in self.arg_types)
         tuple_strategy = strategies.tuples(*input_strategies)
