@@ -206,20 +206,21 @@ class Skribe:
         task.end()
 
     def deploy_and_run(self, max_examples: int, id: str | None = None) -> list[FuzzError]:
-
-        test_contracts: list[ArbitrumContract]
-        if self.is_foundry:
-            foundry = Foundry(self.contract_dir)
-            test_contracts = [c for c in foundry.contracts.values() if is_foundry_test(c)]
-        else:
-            contract_ = StylusContract(cargo_bin=self._cargo_bin, contract_dir=self.contract_dir)
-            test_contracts = [contract_]
+        test_contracts = self._load_contracts()
 
         errors: list[FuzzError] = []
         for contract in test_contracts:
             errors += self.deploy_and_run_contract(contract, max_examples, id)
 
         return errors
+
+    def _load_contracts(self) -> list[ArbitrumContract]:
+        if self.is_foundry:
+            foundry = Foundry(self.contract_dir)
+            return [c for c in foundry.contracts.values() if is_foundry_test(c)]
+
+        contract = StylusContract(cargo_bin=self._cargo_bin, contract_dir=self.contract_dir)
+        return [contract]
 
     def deploy_and_run_contract(
         self, contract: ArbitrumContract, max_examples: int, id: str | None = None
@@ -237,6 +238,10 @@ class Skribe:
                     errors.append(e)
 
         return errors
+
+    def export_specs(self) -> list[FuzzSpec]:
+        contracts = self._load_contracts()
+        return [self.create_spec(contract) for contract in contracts]
 
     def create_spec(self, contract: ArbitrumContract) -> FuzzSpec:
         template = self.create_template_pattern(contract)

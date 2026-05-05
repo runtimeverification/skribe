@@ -15,11 +15,12 @@ Skribe has two subcommands: `build` and `run`.
 
 ```
 $ skribe --help
-usage: skribe [-h] [--directory DIRECTORY] {build,run} ...
+usage: skribe [-h] [--directory DIRECTORY] {build,export-specs,run} ...
 
 positional arguments:
-  {build,run}
+  {build,export-specs,run}
     build               build the test contract
+    export-specs        print the fuzzer specifications
     run                 run tests with fuzzing
 
 options:
