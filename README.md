@@ -15,15 +15,17 @@ Skribe has two subcommands: `build` and `run`.
 
 ```
 $ skribe --help
-usage: skribe [-h] {build,run} ...
+usage: skribe [-h] [--directory DIRECTORY] {build,run} ...
 
 positional arguments:
   {build,run}
-    build      build the test contract
-    run        run tests with fuzzing
+    build               build the test contract
+    run                 run tests with fuzzing
 
 options:
-  -h, --help   show this help message and exit
+  -h, --help            show this help message and exit
+  --directory, -C DIRECTORY
+                        The test contract's directory (defaults to the current working directory).
 ```
 ### Skribe test contract structure
 

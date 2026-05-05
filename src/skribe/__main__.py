@@ -74,25 +74,19 @@ def _exec_run(dir_path: Path | None, id: str | None, max_examples: int) -> None:
 
 def _argument_parser() -> ArgumentParser:
     parser = ArgumentParser(prog='skribe')
+    parser.add_argument(
+        '--directory',
+        '-C',
+        type=ensure_dir_path,
+        default=None,
+        help="The test contract\'s directory (defaults to the current working directory).",
+    )
+
     command_parser = parser.add_subparsers(dest='command', required=True)
 
-    build_parser = command_parser.add_parser('build', help='build the test contract')
-    build_parser.add_argument(
-        '--directory',
-        '-C',
-        type=ensure_dir_path,
-        default=None,
-        help="The test contract\'s directory (defaults to the current working directory).",
-    )
+    command_parser.add_parser('build', help='build the test contract')
 
     run_parser = command_parser.add_parser('run', help='run tests with fuzzing')
-    run_parser.add_argument(
-        '--directory',
-        '-C',
-        type=ensure_dir_path,
-        default=None,
-        help="The test contract\'s directory (defaults to the current working directory).",
-    )
     run_parser.add_argument(
         '--id', help='Name of the test function to run. If not specified, all test functions will be executed.'
     )
