@@ -49,7 +49,7 @@ def _exec_export_specs(dir_path: Path | None) -> None:
     """
     dir_path = Path.cwd() if dir_path is None else dir_path
     skribe = Skribe(concrete_definition, dir_path)
-    specs = skribe.export_specs()
+    specs = skribe.init_specs()
     print(json.dumps([spec.dict for spec in specs]))
     exit(0)
 
