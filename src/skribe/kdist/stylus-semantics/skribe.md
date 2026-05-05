@@ -159,6 +159,31 @@ module SKRIBE
         </instrs>
         <output> OUT </output>
 
+```
+
+### Pranks
+
+```k
+    rule [stylus.prank]:
+         <k> #callStylus ACCTTO ACCTCODE VALUE APPVALUE ARGS STATIC RET_LEN_PTR
+          => #injectPrank
+          ~> #callStylus ACCTTO ACCTCODE VALUE APPVALUE ARGS STATIC RET_LEN_PTR
+          ~> #endPrank
+             ...
+         </k>
+         <callDepth> CD </callDepth>
+         <id> ACCT </id>
+         <prank>
+           <active> true </active>
+           <newCaller> NCL </newCaller>
+           <depth> CD </depth>
+           ...
+         </prank>
+      requires ACCT =/=K NCL
+       andBool ACCTTO =/=K #address(FoundryCheat)
+      [priority(34)]
+
+
 endmodule
 ```
 
