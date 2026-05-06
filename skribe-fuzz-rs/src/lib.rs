@@ -4,6 +4,9 @@ pub use kframework_ffi::kllvm;
 use kframework::kore::{Id, Pattern, Sort};
 use kframework_ffi::kllvm::{Marshaller, VarHandler};
 
+mod fuzz_spec;
+pub use fuzz_spec::{FuzzSpec, Signature, fuzz_specs_from_json};
+
 struct DummyHandler;
 
 impl VarHandler for DummyHandler {
