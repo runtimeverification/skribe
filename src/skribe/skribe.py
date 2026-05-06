@@ -325,9 +325,4 @@ def _filter_signatures(signatures: Iterable[Signature], id: str | None) -> list[
     if id is None:
         return list(signatures)
 
-    else:
-        res = [sig for sig in signatures if sig.name == id]
-        if res:
-            raise KeyError(f'Test function {id!r} not found.')
-
-    return res
+    return [sig for sig in signatures if sig.name == id]
