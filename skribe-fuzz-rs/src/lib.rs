@@ -1,8 +1,8 @@
-pub use kframework_ffi::kllvm;
 pub use kframework::kore;
+pub use kframework_ffi::kllvm;
 
-use kframework_ffi::kllvm::{Marshaller, VarHandler};
 use kframework::kore::{Id, Pattern, Sort};
+use kframework_ffi::kllvm::{Marshaller, VarHandler};
 
 struct DummyHandler;
 
@@ -13,7 +13,13 @@ impl VarHandler for DummyHandler {
 }
 
 pub fn make_dv() -> kllvm::Pattern {
-    let dv = Pattern::Dv { sort: Sort::App { id: Id::new("SortInt".to_string()).unwrap(), args: vec![] }, value: "1".into() };
+    let dv = Pattern::Dv {
+        sort: Sort::App {
+            id: Id::new("SortInt".to_string()).unwrap(),
+            args: vec![],
+        },
+        value: "1".into(),
+    };
 
     let mut marshal: Marshaller<DummyHandler> = Marshaller::new(None);
 
