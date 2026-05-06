@@ -1,0 +1,8 @@
+[package]
+name = "skribe-fuzz-rs"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+kframework = { git = "https://github.com/runtimeverification/kframework-rs.git", rev = "1e7ee3a" }
+kframework_ffi = { git = "https://github.com/runtimeverification/kframework-rs.git", rev = "1e7ee3a" }
