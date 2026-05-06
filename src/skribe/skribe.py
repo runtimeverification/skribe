@@ -206,25 +206,22 @@ class Skribe:
         task.end()
 
     def deploy_and_run(self, max_examples: int, id: str | None = None) -> list[FuzzError]:
+        # Deploy
+        specs = self.init_specs()
 
-        test_contracts: list[ArbitrumContract]
-        if self.is_foundry:
-            foundry = Foundry(self.contract_dir)
-            test_contracts = [c for c in foundry.contracts.values() if is_foundry_test(c)]
-        else:
-            contract_ = StylusContract(cargo_bin=self._cargo_bin, contract_dir=self.contract_dir)
-            test_contracts = [contract_]
-
+        # Run
         errors: list[FuzzError] = []
-        for contract in test_contracts:
-            errors += self.deploy_and_run_contract(contract, max_examples, id)
+        for spec in specs:
+            errors += self._run_spec(spec, max_examples, id)
 
         return errors
 
-    def deploy_and_run_contract(
-        self, contract: ArbitrumContract, max_examples: int, id: str | None = None
-    ) -> list[FuzzError]:
-        spec = self.create_spec(contract)
+    def init_specs(self) -> list[FuzzSpec]:
+        contracts = self._load_contracts()
+        specs = [self._create_spec(contract) for contract in contracts]
+        return specs
+
+    def _run_spec(self, spec: FuzzSpec, max_examples: int, id: str | None = None) -> list[FuzzError]:
         signatures = _filter_signatures(spec.signatures, id=id)
 
         errors: list[FuzzError] = []
@@ -238,12 +235,20 @@ class Skribe:
 
         return errors
 
-    def create_spec(self, contract: ArbitrumContract) -> FuzzSpec:
-        template = self.create_template_pattern(contract)
+    def _load_contracts(self) -> list[ArbitrumContract]:
+        if self.is_foundry:
+            foundry = Foundry(self.contract_dir)
+            return [c for c in foundry.contracts.values() if is_foundry_test(c)]
+
+        contract = StylusContract(cargo_bin=self._cargo_bin, contract_dir=self.contract_dir)
+        return [contract]
+
+    def _create_spec(self, contract: ArbitrumContract) -> FuzzSpec:
+        template = self._create_template_pattern(contract)
         signatures = tuple(Signature.from_method(method) for method in contract.methods if method.is_test)
         return FuzzSpec(template=template, signatures=signatures)
 
-    def create_template_pattern(self, contract: ArbitrumContract) -> Pattern:
+    def _create_template_pattern(self, contract: ArbitrumContract) -> Pattern:
         contract_kast: KInner
         if isinstance(contract, StylusContract):
             contract_kast = wasm2kast(BytesIO(contract.deployed_bytecode))
