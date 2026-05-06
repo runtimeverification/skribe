@@ -5,7 +5,7 @@ import sys
 from functools import cached_property
 from io import BytesIO
 from pathlib import Path
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, NamedTuple
 
 from eth_abi import decode, encode
 from kontrol.foundry import Foundry
@@ -21,8 +21,7 @@ from pyk.ktool.krun import KRunOutput
 from pyk.utils import run_process
 from pykwasm.wasm2kast import wasm2kast
 
-from skribe.contract import StylusContract, argument_strategy, get_arg_types, is_foundry_test, setup_method
-
+from .contract import Signature, StylusContract, is_foundry_test, setup_method
 from .kast.syntax import (
     call_stylus,
     check_foundry_success,
@@ -37,14 +36,13 @@ from .simulation import CONFIG_VAR_PARSERS, call_data, config_vars
 from .utils import RECURSION_LIMIT, PykHooks, SkribeError, subst_on_k_cell
 
 if TYPE_CHECKING:
-    from collections.abc import Mapping
+    from collections.abc import Iterable, Mapping
     from typing import Any
 
     from pyk.kast.inner import KInner
     from pyk.kore.syntax import Pattern
 
-    from skribe.contract import ArbitrumContract, Method
-
+    from .contract import ArbitrumContract
     from .progress import FuzzTask
     from .utils import SkribeDefinition
 
@@ -60,8 +58,26 @@ TEST_CALLER_ID = 0x1804C8AB1F12E6BBF3894D4083F33E07309D1F38
 TEST_CONTRACT_ID = 0x7FA9385BE102AC3EAC297483DD6233D62B3E1496
 
 
-class Skribe:
+class FuzzSpec(NamedTuple):
+    template: Pattern
+    signatures: tuple[Signature, ...]
 
+    @property
+    def dict(self) -> dict[str, Any]:
+        return {
+            'template': self.template.text,
+            'signatures': [
+                {
+                    'contract_name': signature.contract_name,
+                    'name': signature.name,
+                    'arg_types': list(signature.arg_types),
+                }
+                for signature in self.signatures
+            ],
+        }
+
+
+class Skribe:
     definition: SkribeDefinition
     contract_dir: Path
 
@@ -155,19 +171,16 @@ class Skribe:
 
     def run_test(
         self,
-        conf: KInner,
-        subst: dict[str, KInner],
-        binding: Method,
+        template_pattern: Pattern,
+        signature: Signature,
         max_examples: int,
         task: FuzzTask,
     ) -> None:
-        """Given a configuration with a deployed test contract, fuzz over the tests for the supplied binding.
+        """Given a configuration with a deployed test contract, fuzz over the tests for the supplied signature.
 
         Args:
-            conf: The template configuration.
-            subst: A substitution mapping such that 'Subst(subst).apply(conf)' gives the initial configuration with the
-                   deployed contract.
-            binding: The contract binding that specifies the test name and parameters.
+            template_pattern: The template KORE configuration.
+            signature: The signature of the test to fuzz over.
             max_examples: The maximum number of fuzzing test cases to generate and execute.
 
         Raises:
@@ -177,22 +190,12 @@ class Skribe:
         def calldata_to_kore(data: bytes) -> Pattern:
             return kast_to_kore(self.definition.kdefinition, bytesToken(data), BYTES)
 
-        k_steps = [
-            set_exit_code(1),
-            call_stylus(TEST_CALLER_ID, TEST_CONTRACT_ID, CALLDATA, 0),
-            check_foundry_success(),
-            set_exit_code(0),
-        ]
-        subst['K_CELL'] = steps_of(k_steps)
-
-        template_config = Subst(subst).apply(conf)
-        template_config_kore = kast_to_kore(self.definition.kdefinition, template_config, GENERATED_TOP_CELL)
-        template_subst = {CALLDATA_EVAR: argument_strategy(binding).map(calldata_to_kore)}
+        template_subst = {CALLDATA_EVAR: signature.argument_strategy().map(calldata_to_kore)}
 
         task.start()
         fuzz(
             self.definition.path,
-            template_config_kore,
+            template_pattern,
             template_subst,
             check_exit_code=True,
             max_examples=max_examples,
@@ -201,21 +204,6 @@ class Skribe:
             deadline=20000,
         )
         task.end()
-
-    def select_tests(self, contract: ArbitrumContract, id: str | None) -> list[Method]:
-        test_methods = []
-        for m in contract.methods:
-            if m.is_test:
-                test_methods.append(m)
-
-        if id is None:
-            tests = test_methods
-        else:
-            tests = [b for b in test_methods if b.name == id]
-            if not tests:
-                raise KeyError(f'Test function {id!r} not found.')
-
-        return tests
 
     def deploy_and_run(self, max_examples: int, id: str | None = None) -> list[FuzzError]:
 
@@ -236,7 +224,26 @@ class Skribe:
     def deploy_and_run_contract(
         self, contract: ArbitrumContract, max_examples: int, id: str | None = None
     ) -> list[FuzzError]:
+        spec = self.create_spec(contract)
+        signatures = _filter_signatures(spec.signatures, id=id)
 
+        errors: list[FuzzError] = []
+        with FuzzProgress(signatures, max_examples) as progress:
+            for task in progress.fuzz_tasks:
+                try:
+                    self.run_test(spec.template, task.signature, max_examples, task)
+                except FuzzError as e:
+                    task.fail()
+                    errors.append(e)
+
+        return errors
+
+    def create_spec(self, contract: ArbitrumContract) -> FuzzSpec:
+        template = self.create_template_pattern(contract)
+        signatures = tuple(Signature.from_method(method) for method in contract.methods if method.is_test)
+        return FuzzSpec(template=template, signatures=signatures)
+
+    def create_template_pattern(self, contract: ArbitrumContract) -> Pattern:
         contract_kast: KInner
         if isinstance(contract, StylusContract):
             contract_kast = wasm2kast(BytesIO(contract.deployed_bytecode))
@@ -250,18 +257,17 @@ class Skribe:
 
         init_config = self.deploy_test(contract_kast, setup is not None)
         template_conf, init_subst = split_config_from(init_config)
+        k_steps = [
+            set_exit_code(1),
+            call_stylus(TEST_CALLER_ID, TEST_CONTRACT_ID, CALLDATA, 0),
+            check_foundry_success(),
+            set_exit_code(0),
+        ]
+        init_subst['K_CELL'] = steps_of(k_steps)
+        template_conf = Subst(init_subst).apply(template_conf)
+        template_pattern = kast_to_kore(self.definition.kdefinition, template_conf, GENERATED_TOP_CELL)
 
-        tests = self.select_tests(contract, id)
-        errors: list[FuzzError] = []
-        with FuzzProgress(tests, max_examples) as progress:
-            for task in progress.fuzz_tasks:
-                try:
-                    self.run_test(template_conf, init_subst, task.binding, max_examples, task)
-                except FuzzError as e:
-                    task.fail()
-                    errors.append(e)
-
-        return errors
+        return template_pattern
 
 
 class KometFuzzHandler(KFuzzHandler):
@@ -294,8 +300,8 @@ class KometFuzzHandler(KFuzzHandler):
         calldata_kast = self.definition.krun.kore_to_kast(args[CALLDATA_EVAR])
         assert isinstance(calldata_kast, KToken)
         calldata = pretty_bytes(calldata_kast)
-        decoded = decode(get_arg_types(self.task.binding), calldata[4:])
-        description = f'{self.task.binding.contract_name}.{self.task.binding.name}'
+        decoded = decode(self.task.signature.arg_types, calldata[4:])
+        description = self.task.signature.qualified_name
         raise FuzzError(description, decoded)
 
 
@@ -313,3 +319,10 @@ class FuzzError(SkribeError):
 
 
 class InitializationError(SkribeError): ...
+
+
+def _filter_signatures(signatures: Iterable[Signature], id: str | None) -> list[Signature]:
+    if id is None:
+        return list(signatures)
+
+    return [sig for sig in signatures if sig.name == id]

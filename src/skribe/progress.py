@@ -9,13 +9,13 @@ if TYPE_CHECKING:
 
     from rich.progress import TaskID
 
-    from .contract import Method
+    from .contract import Signature
 
 
 class FuzzProgress(Progress):
     fuzz_tasks: list[FuzzTask]
 
-    def __init__(self, bindings: Iterable[Method], max_examples: int):
+    def __init__(self, signatures: Iterable[Signature], max_examples: int):
         super().__init__(
             TextColumn('[progress.description]{task.description}'),
             BarColumn(),
@@ -27,19 +27,19 @@ class FuzzProgress(Progress):
         self.fuzz_tasks = []
 
         # Add all tests to the progress display before running them
-        for binding in bindings:
-            description = f'{binding.contract_name}.{binding.name}'
+        for signature in signatures:
+            description = signature.qualified_name
             task_id = self.add_task(description, total=max_examples, start=False, status='Waiting')
-            self.fuzz_tasks.append(FuzzTask(binding, task_id, self))
+            self.fuzz_tasks.append(FuzzTask(signature, task_id, self))
 
 
 class FuzzTask:
-    binding: Method
+    signature: Signature
     task_id: TaskID
     progress: FuzzProgress
 
-    def __init__(self, binding: Method, task_id: TaskID, progress: FuzzProgress):
-        self.binding = binding
+    def __init__(self, signature: Signature, task_id: TaskID, progress: FuzzProgress):
+        self.signature = signature
         self.task_id = task_id
         self.progress = progress
 
