@@ -4,7 +4,13 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
+alloy-json-abi = "1.5.7"
+alloy-dyn-abi = "1.5.7"
 serde = "1.0.228"
 serde_json = "1.0.149"
 kframework = { git = "https://github.com/runtimeverification/kframework-rs.git", rev = "1e7ee3a" }
 kframework_ffi = { git = "https://github.com/runtimeverification/kframework-rs.git", rev = "1e7ee3a" }
+
+[dev-dependencies]
+alloy-primitives = "1.5.7"
+hex-literal = "1.1.0"
