@@ -1,28 +1,100 @@
 #![no_main]
+use std::{cell::Cell, sync::OnceLock};
 
 use libfuzzer_sys::fuzz_target;
 
 use pico_args::Arguments;
 
-use skribe_fuzz_rs::{kllvm, fuzz_specs_from_json, make_dv};
+use skribe_fuzz_rs::{
+    Signature, fuzz_specs_from_json,
+    kllvm::{self, MarshalError, Marshaller, VarHandler},
+    kore,
+};
+
+struct FuzzConfig {
+    template: kore::Pattern,
+    signatures: Vec<Signature>,
+    contract_name: String,
+    function_name: String,
+}
+
+// TODO
+struct SignatureFuzzer;
+
+impl VarHandler for SignatureFuzzer {
+    fn substitute(
+        &mut self,
+        name: &str,
+        _sort: &kore::Sort,
+    ) -> Result<kore::Pattern, kllvm::MarshalError> {
+        let sort = kore::Sort::App {
+            id: kore::Id::new("SortBytes".to_string()).unwrap(),
+            args: vec![],
+        };
+        match name {
+            "VarCALLDATA" => Ok(kore::Pattern::Dv {
+                sort,
+                // TODO
+                value: "00".into(),
+            }),
+            _ => Err(MarshalError::Unsupported(
+                "Encountered a variable that isn't CALLDATA",
+            )),
+        }
+    }
+}
+
+static FUZZ_CONFIG: OnceLock<FuzzConfig> = OnceLock::new();
 
 fuzz_target!( init: {
     kllvm::init();
     let mut args = Arguments::from_env();
 
-    let fuzz_spec_file: Option<String> = args
+    let fuzz_spec_file: String = args
         // You must pass this option as `--fuzz-spec=<specfile>` with the
         // equals sign, otherwise libfuzzer treats it as a positional argument
-        .opt_value_from_str("--fuzz-spec")
+        .value_from_str("--fuzz-spec")
         .unwrap();
 
-    if let Some(file) = fuzz_spec_file {
-        let contents = std::fs::read_to_string(file).unwrap();
-        let specs = fuzz_specs_from_json(&contents).unwrap();
-        println!("{:?}", specs);
-    }
+    let contract_name: String = args
+        .value_from_str("--contract-name")
+        .unwrap();
+
+    let function_name: String = args
+        .value_from_str("--function-name")
+        .unwrap();
+
+    let contents = std::fs::read_to_string(fuzz_spec_file).unwrap();
+    let mut specs = fuzz_specs_from_json(&contents).unwrap();
+
+    // Assuming only one spec came from the json
+    let spec = specs.remove(0);
+
+    let mut parser = kore::Parser::new(&spec.template).unwrap();
+    let template = parser.pattern().unwrap();
+
+    FUZZ_CONFIG.get_or_init(|| FuzzConfig { template, signatures: spec.signatures, contract_name, function_name });
 },
     |data: &[u8]| {
-    let _ = make_dv();
-    // fuzzed code goes here
+        thread_local! {
+            static MARSHALLER: Cell<Option<Marshaller<SignatureFuzzer>>> = Cell::new(Some(Marshaller::new(None)))
+        }
+        let mut marshaller_cell: Option<Marshaller<_>> = MARSHALLER.take();
+        let marshaller = marshaller_cell.as_mut().unwrap();
+
+        let config = FUZZ_CONFIG.get().unwrap();
+
+        let sig = SignatureFuzzer{};
+        marshaller.set_handler(sig);
+
+        let template = &config.template;
+
+        let kllvm_pattern: kllvm::Pattern = marshaller.marshal(template).unwrap();
+
+        let mut block: kllvm::Block = kllvm_pattern.into();
+        block.take_steps(-1);
+
+        let result: kllvm::Pattern = block.into();
+
+        MARSHALLER.replace(marshaller_cell);
 });
