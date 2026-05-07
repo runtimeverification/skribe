@@ -1,21 +1,21 @@
 [package]
-name = "skribe-fuzz-rs-fuzz"
-version = "0.0.0"
-publish = false
-edition = "2024"
+name      = "skribe-libfuzzer"
+version   = "0.0.0"
+publish   = false
+edition.workspace = true
 
 [package.metadata]
 cargo-fuzz = true
 
 [dependencies]
-libfuzzer-sys = "0.4"
+libfuzzer-sys.workspace = true
 
 [dependencies.skribe-fuzz-rs]
 path = ".."
 
 [[bin]]
-name = "fuzz_target_1"
-path = "fuzz_targets/fuzz_target_1.rs"
-test = false
-doc = false
+name  = "fuzz_target_1"
+path  = "fuzz_targets/fuzz_target_1.rs"
+test  = false
+doc   = false
 bench = false
