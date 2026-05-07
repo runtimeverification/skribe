@@ -9,6 +9,7 @@ cargo-fuzz = true
 
 [dependencies]
 libfuzzer-sys.workspace = true
+pico-args = { workspace = true, features = ["eq-separator"] }
 
 [dependencies.skribe-fuzz-rs]
 path = ".."
