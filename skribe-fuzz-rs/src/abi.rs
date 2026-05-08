@@ -1,6 +1,7 @@
 use crate::Signature;
 use alloy_dyn_abi::{DynSolType, DynSolValue, JsonAbiExt};
 use alloy_json_abi::Function;
+use arbitrary::Unstructured;
 use std::fmt::Debug;
 
 #[derive(Debug)]
@@ -30,11 +31,18 @@ impl SignatureAbi {
         Ok(SignatureAbi { types, function })
     }
 
-    pub fn types(&self) -> &[DynSolType] {
-        &self.types
+    pub fn arbitrary_input(&self, u: &mut Unstructured<'_>) -> arbitrary::Result<Vec<u8>> {
+        let values = self
+            .types
+            .iter()
+            .map(|ty| DynSolValue::arbitrary_from_type(ty, u))
+            .collect::<arbitrary::Result<Vec<_>>>()?;
+
+        self.encode_input(&values)
+            .map_err(|_| arbitrary::Error::IncorrectFormat)
     }
 
-    pub fn encode_input(&self, values: &[DynSolValue]) -> Result<Vec<u8>, String> {
+    fn encode_input(&self, values: &[DynSolValue]) -> Result<Vec<u8>, String> {
         self.function
             .abi_encode_input(values)
             .map_err(|e| e.to_string())
@@ -70,7 +78,7 @@ mod tests {
         ];
 
         // When
-        let actual = abi.types();
+        let actual = abi.types;
 
         // Then
         assert_eq!(actual, expected);
@@ -117,6 +125,20 @@ mod tests {
 
         // Then
         assert_eq!(actual, expected);
+    }
+
+    #[test]
+    fn test_arbitrary_input() {
+        // Given
+        let abi = signature_abi();
+        let raw = vec![0u8; 256];
+        let mut u = Unstructured::new(&raw);
+
+        // When
+        let result = abi.arbitrary_input(&mut u);
+
+        // Then
+        assert!(result.is_ok());
     }
 
     fn signature_abi() -> SignatureAbi {
