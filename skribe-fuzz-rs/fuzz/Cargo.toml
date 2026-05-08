@@ -8,6 +8,7 @@ edition.workspace = true
 cargo-fuzz = true
 
 [dependencies]
+arbitrary.workspace = true
 libfuzzer-sys.workspace = true
 pico-args = { workspace = true, features = ["eq-separator"] }
 

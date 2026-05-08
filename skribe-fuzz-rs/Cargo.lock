@@ -1891,6 +1891,7 @@ dependencies = [
 name = "skribe-libfuzzer"
 version = "0.0.0"
 dependencies = [
+ "arbitrary",
  "libfuzzer-sys",
  "pico-args",
  "skribe-fuzz-rs",

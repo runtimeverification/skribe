@@ -1,25 +1,23 @@
 #![no_main]
 use std::cell::Cell;
 
+use arbitrary::Unstructured;
 use libfuzzer_sys::fuzz_target;
 
 use pico_args::Arguments;
 
 use skribe_fuzz_rs::{
-    Signature, fuzz_specs_from_json, get_exit_code,
+    FuzzSpec, Signature, SignatureAbi, fuzz_specs_from_json, get_exit_code,
     kllvm::{self, MarshalError, Marshaller, VarHandler},
     kore,
 };
 
 struct FuzzConfig {
     template: kore::Pattern,
-    signatures: Vec<Signature>,
-    contract_name: String,
-    function_name: String,
+    abi: SignatureAbi,
 }
 
-// TODO: Implement ABI parsing and Arbitrary value generation
-struct SignatureFuzzer;
+struct SignatureFuzzer(Vec<u8>);
 
 impl VarHandler for SignatureFuzzer {
     fn substitute(
@@ -31,12 +29,9 @@ impl VarHandler for SignatureFuzzer {
             id: kore::Id::new("SortBytes".to_string()).unwrap(),
             args: vec![],
         };
+        let value = kore::Str(self.0.iter().map(|&b| b as char).collect());
         match name {
-            "VarCALLDATA" => Ok(kore::Pattern::Dv {
-                sort,
-                // TODO: Implement ABI encoding
-                value: "00".into(),
-            }),
+            "VarCALLDATA" => Ok(kore::Pattern::Dv { sort, value }),
             _ => Err(MarshalError::Unsupported(
                 "Encountered a variable that isn't CALLDATA",
             )),
@@ -74,12 +69,15 @@ fuzz_target!( init: {
 
     // Parse fuzz spec
     let contents = std::fs::read_to_string(fuzz_spec_file).unwrap();
-    let mut specs = fuzz_specs_from_json(&contents).unwrap();
-    let spec = specs.remove(0); // Assuming only one spec came from the json
-    let mut parser = kore::Parser::new(&spec.template).unwrap();
+    let specs = fuzz_specs_from_json(&contents).unwrap();
+    let (template_str, signature) = extract_template_and_signature(specs, &contract_name, &function_name).unwrap();
+
+    let mut parser = kore::Parser::new(&template_str).unwrap();
     let template = parser.pattern().unwrap();
 
-    FUZZ_CONFIG.replace(Some(FuzzConfig { template, signatures: spec.signatures, contract_name, function_name }));
+    let abi = SignatureAbi::from_signature(signature).unwrap();
+
+    FUZZ_CONFIG.replace(Some(FuzzConfig { template, abi }));
 },
     |data: &[u8]| {
         let mut marshaller_cell: Option<Marshaller<_>> = MARSHALLER.take();
@@ -88,7 +86,9 @@ fuzz_target!( init: {
         let config = config_cell.as_ref().unwrap();
 
         // Marshal over to kllvm with the CALLDATA variable substituted
-        let sig = SignatureFuzzer{};
+        let mut u = Unstructured::new(data);
+        let input = config.abi.arbitrary_input(&mut u).unwrap();
+        let sig = SignatureFuzzer(input);
         marshaller.set_handler(sig);
         let template = &config.template;
         let kllvm_pattern: kllvm::Pattern = marshaller.marshal(template).unwrap();
@@ -106,3 +106,17 @@ fuzz_target!( init: {
         FUZZ_CONFIG.replace(config_cell);
         MARSHALLER.replace(marshaller_cell);
 });
+
+pub fn extract_template_and_signature(
+    specs: Vec<FuzzSpec>,
+    contract_name: &str,
+    function_name: &str,
+) -> Option<(String, Signature)> {
+    specs.into_iter().find_map(|spec| {
+        let template = spec.template;
+        spec.signatures
+            .into_iter()
+            .find(|sig| sig.contract_name == contract_name && sig.name == function_name)
+            .map(|sig| (template.clone(), sig))
+    })
+}
