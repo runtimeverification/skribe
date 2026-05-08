@@ -1,12 +1,12 @@
 #![no_main]
-use std::{cell::Cell, sync::OnceLock};
+use std::cell::Cell;
 
 use libfuzzer_sys::fuzz_target;
 
 use pico_args::Arguments;
 
 use skribe_fuzz_rs::{
-    Signature, fuzz_specs_from_json,
+    Signature, fuzz_specs_from_json, get_exit_code,
     kllvm::{self, MarshalError, Marshaller, VarHandler},
     kore,
 };
@@ -106,14 +106,3 @@ fuzz_target!( init: {
         FUZZ_CONFIG.replace(config_cell);
         MARSHALLER.replace(marshaller_cell);
 });
-
-fn get_exit_code(block: &kllvm::Block) -> u32 {
-    let res_str = format!("{}", block);
-    let pattern = r#"Lbl'-LT-'exit-code'-GT-'{}(\dv{SortInt{}}(""#;
-    let idx = res_str.find(pattern).unwrap();
-    let slice = &res_str[idx + pattern.len()..];
-    let idx2 = slice.find(r#"""#).unwrap();
-    let num_str = &slice[..idx2];
-
-    num_str.parse().unwrap()
-}
