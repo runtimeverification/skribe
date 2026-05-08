@@ -21,7 +21,9 @@ dependencies = [
  "alloy-primitives",
  "alloy-sol-type-parser",
  "alloy-sol-types",
+ "arbitrary",
  "itoa",
+ "proptest",
  "serde",
  "serde_json",
  "winnow 0.7.15",
@@ -46,6 +48,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "de3b431b4e72cd8bd0ec7a50b4be18e73dab74de0dba180eef171055e5d5926e"
 dependencies = [
  "alloy-rlp",
+ "arbitrary",
  "bytes",
  "cfg-if",
  "const-hex",
@@ -58,6 +61,7 @@ dependencies = [
  "keccak-asm",
  "paste",
  "proptest",
+ "proptest-derive",
  "rand 0.9.4",
  "rapidhash",
  "ruint",
@@ -207,6 +211,9 @@ name = "arbitrary"
 version = "1.4.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "c3d036a3c4ab069c7b410a2ce876bd74808d2d0888a82667669f8e783a898bf1"
+dependencies = [
+ "derive_arbitrary",
+]
 
 [[package]]
 name = "ark-ff"
@@ -706,6 +713,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "derive_arbitrary"
+version = "1.4.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "1e567bd82dcff979e4b03460c307b3cdc9e96fde3d73bed1496d2bc75d9dd62a"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn 2.0.117",
+]
+
+[[package]]
 name = "derive_more"
 version = "2.1.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1071,6 +1089,7 @@ version = "2.14.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d466e9454f08e4a911e14806c24e16fba1b4c121d1ea474396f396069cf949d9"
 dependencies = [
+ "arbitrary",
  "equivalent",
  "hashbrown 0.17.0",
  "serde",
@@ -1152,7 +1171,7 @@ dependencies = [
 [[package]]
 name = "kframework"
 version = "0.1.0"
-source = "git+https://github.com/runtimeverification/kframework-rs.git?rev=1e7ee3a#1e7ee3a2377a91090e3c66b21dc2ab49e6bc2373"
+source = "git+https://github.com/runtimeverification/kframework-rs.git?rev=73c4986#73c4986cedefa8f2190524fa3f8d0948007cb694"
 dependencies = [
  "clap",
  "serde",
@@ -1162,7 +1181,7 @@ dependencies = [
 [[package]]
 name = "kframework_ffi"
 version = "0.1.0"
-source = "git+https://github.com/runtimeverification/kframework-rs.git?rev=1e7ee3a#1e7ee3a2377a91090e3c66b21dc2ab49e6bc2373"
+source = "git+https://github.com/runtimeverification/kframework-rs.git?rev=73c4986#73c4986cedefa8f2190524fa3f8d0948007cb694"
 dependencies = [
  "bindgen",
  "kframework",
@@ -1458,6 +1477,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "proptest-derive"
+version = "0.7.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "fb6dc647500e84a25a85b100e76c85b8ace114c209432dc174f20aac11d4ed6c"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn 2.0.117",
+]
+
+[[package]]
 name = "quick-error"
 version = "1.2.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1625,6 +1655,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "0298da754d1395046b0afdc2f20ee76d29a8ae310cd30ffa84ed42acba9cb12a"
 dependencies = [
  "alloy-rlp",
+ "arbitrary",
  "ark-ff 0.3.0",
  "ark-ff 0.4.2",
  "ark-ff 0.5.0",
@@ -1848,6 +1879,7 @@ dependencies = [
  "alloy-dyn-abi",
  "alloy-json-abi",
  "alloy-primitives",
+ "arbitrary",
  "hex-literal",
  "kframework",
  "kframework_ffi",
@@ -1859,6 +1891,7 @@ dependencies = [
 name = "skribe-libfuzzer"
 version = "0.0.0"
 dependencies = [
+ "arbitrary",
  "libfuzzer-sys",
  "pico-args",
  "skribe-fuzz-rs",

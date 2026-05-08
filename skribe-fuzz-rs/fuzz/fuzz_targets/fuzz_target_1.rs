@@ -1,28 +1,122 @@
 #![no_main]
+use std::cell::Cell;
 
+use arbitrary::Unstructured;
 use libfuzzer_sys::fuzz_target;
 
 use pico_args::Arguments;
 
-use skribe_fuzz_rs::{kllvm, fuzz_specs_from_json, make_dv};
+use skribe_fuzz_rs::{
+    FuzzSpec, Signature, SignatureAbi, fuzz_specs_from_json, get_exit_code,
+    kllvm::{self, MarshalError, Marshaller, VarHandler},
+    kore,
+};
+
+struct FuzzConfig {
+    template: kore::Pattern,
+    abi: SignatureAbi,
+}
+
+struct SignatureFuzzer(Vec<u8>);
+
+impl VarHandler for SignatureFuzzer {
+    fn substitute(
+        &mut self,
+        name: &str,
+        _sort: &kore::Sort,
+    ) -> Result<kore::Pattern, kllvm::MarshalError> {
+        let sort = kore::Sort::App {
+            id: kore::Id::new("SortBytes".to_string()).unwrap(),
+            args: vec![],
+        };
+        let value = kore::Str(self.0.iter().map(|&b| b as char).collect());
+        match name {
+            "VarCALLDATA" => Ok(kore::Pattern::Dv { sort, value }),
+            _ => Err(MarshalError::Unsupported(
+                "Encountered a variable that isn't CALLDATA",
+            )),
+        }
+    }
+}
+
+// Persistent data across iterations.
+//
+// FUZZ_CONFIG - The fuzz spec + contract/function names to fuzz. Parsed from the command line
+// MARSHALLER  - The marshaller for moving terms over to kllvm. Keeps parts of the template
+//               configuration cached.
+thread_local! {
+    static FUZZ_CONFIG: Cell<Option<FuzzConfig>> = Cell::new(None);
+    static MARSHALLER: Cell<Option<Marshaller<SignatureFuzzer>>> = Cell::new(Some(Marshaller::new(None)))
+}
 
 fuzz_target!( init: {
     kllvm::init();
-    let mut args = Arguments::from_env();
 
-    let fuzz_spec_file: Option<String> = args
-        // You must pass this option as `--fuzz-spec=<specfile>` with the
-        // equals sign, otherwise libfuzzer treats it as a positional argument
-        .opt_value_from_str("--fuzz-spec")
+    // Parse arguments
+    //
+    // You must pass these options as `--xxx=<val>` with the equals sign,
+    // otherwise libfuzzer treats `<val>` as a positional argument.
+    let mut args = Arguments::from_env();
+    let fuzz_spec_file: String = args
+        .value_from_str("--fuzz-spec")
+        .unwrap();
+    let contract_name: String = args
+        .value_from_str("--contract-name")
+        .unwrap();
+    let function_name: String = args
+        .value_from_str("--function-name")
         .unwrap();
 
-    if let Some(file) = fuzz_spec_file {
-        let contents = std::fs::read_to_string(file).unwrap();
-        let specs = fuzz_specs_from_json(&contents).unwrap();
-        println!("{:?}", specs);
-    }
+    // Parse fuzz spec
+    let contents = std::fs::read_to_string(fuzz_spec_file).unwrap();
+    let specs = fuzz_specs_from_json(&contents).unwrap();
+    let (template_str, signature) = extract_template_and_signature(specs, &contract_name, &function_name).unwrap();
+
+    let mut parser = kore::Parser::new(&template_str).unwrap();
+    let template = parser.pattern().unwrap();
+
+    let abi = SignatureAbi::from_signature(signature).unwrap();
+
+    FUZZ_CONFIG.replace(Some(FuzzConfig { template, abi }));
 },
     |data: &[u8]| {
-    let _ = make_dv();
-    // fuzzed code goes here
+        let mut marshaller_cell: Option<Marshaller<_>> = MARSHALLER.take();
+        let marshaller = marshaller_cell.as_mut().unwrap();
+        let config_cell = FUZZ_CONFIG.take();
+        let config = config_cell.as_ref().unwrap();
+
+        // Marshal over to kllvm with the CALLDATA variable substituted
+        let mut u = Unstructured::new(data);
+        let input = config.abi.arbitrary_input(&mut u).unwrap();
+        let sig = SignatureFuzzer(input);
+        marshaller.set_handler(sig);
+        let template = &config.template;
+        let kllvm_pattern: kllvm::Pattern = marshaller.marshal(template).unwrap();
+
+        // Execute the semantics
+        let mut block: kllvm::Block = kllvm_pattern.into();
+        block.take_steps(-1);
+
+        // Check the exit code
+        let exit_code = get_exit_code(&block);
+        if exit_code != 0 {
+            println!("panic!");
+        }
+
+        FUZZ_CONFIG.replace(config_cell);
+        MARSHALLER.replace(marshaller_cell);
 });
+
+pub fn extract_template_and_signature(
+    specs: Vec<FuzzSpec>,
+    contract_name: &str,
+    function_name: &str,
+) -> Option<(String, Signature)> {
+    specs.into_iter().find_map(|spec| {
+        let template = spec.template;
+        spec.signatures
+            .into_iter()
+            .find(|sig| sig.contract_name == contract_name && sig.name == function_name)
+            .map(|sig| (template.clone(), sig))
+    })
+}

@@ -7,27 +7,14 @@ pub use fuzz_spec::{FuzzSpec, Signature, fuzz_specs_from_json};
 pub use kframework::kore;
 pub use kframework_ffi::kllvm;
 
-use kframework::kore::{Id, Pattern, Sort};
-use kframework_ffi::kllvm::{Marshaller, VarHandler};
+/// Get the <exit-code> cell value from a configuration
+pub fn get_exit_code(block: &kllvm::Block) -> u32 {
+    let res_str = format!("{}", block);
+    let pattern = r#"Lbl'-LT-'exit-code'-GT-'{}(\dv{SortInt{}}(""#;
+    let idx = res_str.find(pattern).unwrap();
+    let slice = &res_str[idx + pattern.len()..];
+    let idx2 = slice.find(r#"""#).unwrap();
+    let num_str = &slice[..idx2];
 
-struct DummyHandler;
-
-impl VarHandler for DummyHandler {
-    fn substitute(&mut self, _name: &str, _sort: &Sort) -> Result<Pattern, kllvm::MarshalError> {
-        Err(kllvm::MarshalError::Unsupported("Not handling variables"))
-    }
-}
-
-pub fn make_dv() -> kllvm::Pattern {
-    let dv = Pattern::Dv {
-        sort: Sort::App {
-            id: Id::new("SortInt".to_string()).unwrap(),
-            args: vec![],
-        },
-        value: "1".into(),
-    };
-
-    let mut marshal: Marshaller<DummyHandler> = Marshaller::new(None);
-
-    marshal.marshal(&dv).unwrap()
+    num_str.parse().unwrap()
 }
