@@ -1,8 +1,10 @@
 mod abi;
+mod fuzz_config;
 mod fuzz_spec;
 
 pub use abi::SignatureAbi;
-pub use fuzz_spec::{FuzzSpec, Signature, fuzz_specs_from_json};
+pub use fuzz_config::{FuzzConfig, SignatureFuzzer};
+pub use fuzz_spec::{FuzzSpec, Signature, extract_template_and_signature, fuzz_specs_from_json};
 
 pub use kframework::kore;
 pub use kframework_ffi::kllvm;
