@@ -32,8 +32,12 @@ serde.workspace = true
 serde_json.workspace = true
 kframework.workspace = true
 kframework_ffi.workspace = true
+pico-args = { workspace = true, features = ["eq-separator"] }
 
 [dev-dependencies]
 alloy-primitives.workspace = true
 hex-literal.workspace = true
 
+[[bin]]
+name  = "skribe-fuzz"
+path  = "bin/skribe_fuzz.rs"
