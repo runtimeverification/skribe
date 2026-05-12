@@ -4,12 +4,16 @@ requires "configuration.md"
 requires "switch.md"
 requires "hostfuns.md"
 requires "memory-opt.md"
+requires "wasm-coverage.md"
+requires "evm-coverage.md"
 
 module STYLUS
     imports CONFIGURATION
     imports HOSTFUNS
     imports SWITCH
     imports WASM-MEMORY-OPT
+    imports WASM-COVERAGE
+    imports EVM-COVERAGE
 ```
 
 ## Stylus Contract Creation
