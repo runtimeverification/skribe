@@ -63,7 +63,7 @@ module SKRIBE
         <stylusvms> .Bag </stylusvms>
 
     rule [setContract-existing]:
-        <k> setContract(ACCT, CODE, STORAGE) => .K ... </k>
+        <k> setContract(ACCT, CODE, STORAGE) => parseAndCacheIfNeeded(ACCT, CODE) ... </k>
         <account>
            <acctID> ACCT </acctID>
            <code>    _ => CODE    </code>
@@ -74,7 +74,7 @@ module SKRIBE
       [priority(50)]
 
     rule [setContract-new]:
-        <k> setContract(ADDR, CODE, STORAGE) => .K ... </k>
+        <k> setContract(ADDR, CODE, STORAGE) => parseAndCacheIfNeeded(ADDR, CODE) ... </k>
         ( .Bag =>
               <account>
                 <acctID>           ADDR               </acctID>
@@ -89,7 +89,12 @@ module SKRIBE
         <stylusvms> .Bag </stylusvms>
       [priority(55)]
 
-
+    syntax K ::= parseAndCacheIfNeeded(id: Int, code: AccountCode)   [function, total]
+ // ----------------------------------------------------------------------------------
+    rule parseAndCacheIfNeeded(ACCT, CODE:Bytes) => #parseAndCacheWasm(ACCT)
+      requires isStylusBytecode(CODE)
+    rule parseAndCacheIfNeeded(_, _)             => .K                         [owise]
+    
     rule [callStylus]:
         <k> callStylus(FROM, TO, DATA, VALUE)
          => #call FROM TO TO VALUE VALUE DATA false

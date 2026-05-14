@@ -3,7 +3,6 @@ from __future__ import annotations
 import shutil
 import sys
 from functools import cached_property
-from io import BytesIO
 from pathlib import Path
 from typing import TYPE_CHECKING, NamedTuple
 
@@ -19,7 +18,6 @@ from pyk.kore.syntax import EVar, SortApp
 from pyk.ktool.kfuzz import KFuzzHandler, fuzz
 from pyk.ktool.krun import KRunOutput
 from pyk.utils import run_process
-from pykwasm.wasm2kast import wasm2kast
 
 from .contract import Signature, StylusContract, is_foundry_test, setup_method
 from .kast.syntax import (
@@ -251,7 +249,7 @@ class Skribe:
     def _create_template_pattern(self, contract: ArbitrumContract) -> Pattern:
         contract_kast: KInner
         if isinstance(contract, StylusContract):
-            contract_kast = wasm2kast(BytesIO(contract.deployed_bytecode))
+            contract_kast = bytesToken(contract.deployed_bytecode)
         else:
             bytecode = bytes.fromhex(contract.deployed_bytecode)
             contract_kast = bytesToken(bytecode)
