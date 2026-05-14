@@ -1,9 +1,7 @@
 {
   lib,
-  stdenv,
   callPackage,
   makeRustPlatform,
-  makeWrapper,
   rust-bin,
 
   skribe-kdist,
@@ -30,20 +28,9 @@ rustPlatform.buildRustPackage {
     };
   };
 
-  nativeBuildInputs = [ makeWrapper rustPlatform.bindgenHook ];
+  nativeBuildInputs = [ rustPlatform.bindgenHook ];
 
   KLLVM_LIBRARY_PATH = "${skribe-kdist}/kdist/stylus-semantics/llvm-library";
-
-  postFixup =
-    let
-      libPathVar =
-        if stdenv.hostPlatform.isDarwin
-        then "DYLD_FALLBACK_LIBRARY_PATH"
-        else "LD_LIBRARY_PATH";
-    in ''
-      wrapProgram $out/bin/skribe-fuzz \
-        --prefix ${libPathVar} : ${skribe-kdist}/kdist/stylus-semantics/llvm-library
-    '';
 
   # cargo-auditable in nixpkgs predates edition 2024 support
   auditable = false;
