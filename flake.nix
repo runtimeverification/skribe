@@ -62,8 +62,12 @@
           inherit skribe-pyk;
           rev = self.rev or null;
         };
+        skribe-fuzz = final.callPackage ./nix/skribe-fuzz {
+          inherit skribe;
+          rev = self.rev or null;
+        };
       in {
-        inherit skribe;
+        inherit skribe skribe-fuzz;
       };
       pkgs = import nixpkgs {
         inherit system;
@@ -93,12 +97,12 @@
         '';
       };
       packages = rec {
-        inherit (pkgs) skribe;
+        inherit (pkgs) skribe skribe-fuzz;
         default = skribe;
       };
     }) // {
       overlays.default = final: prev: {
-        inherit (self.packages.${final.system}) skribe;
+        inherit (self.packages.${final.system}) skribe skribe-fuzz;
       };
     };
 }
