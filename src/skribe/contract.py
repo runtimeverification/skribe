@@ -98,7 +98,8 @@ class StylusContract:
     def deployed_bytecode(self) -> bytes:
         wasm_file_name = self._name.replace('-', '_') + '.wasm'
         wasm_path = Path(self.manifest['target_directory']) / 'wasm32-unknown-unknown' / 'release' / wasm_file_name
-        return wasm_path.read_bytes()
+        bytecode = wasm_path.read_bytes()
+        return b'\xef\xf0\x00\x00' + bytecode
 
 
 ArbitrumContract: TypeAlias = EVMContract | StylusContract
