@@ -58,12 +58,16 @@
           inherit pyproject-nix pyproject-build-systems uv2nix;
           python = final."python${pythonVer}";
         };
-        skribe = final.callPackage ./nix/skribe {
+        skribe-kdist = final.callPackage ./nix/skribe-kdist {
           inherit skribe-pyk;
           rev = self.rev or null;
         };
         skribe-fuzz = final.callPackage ./nix/skribe-fuzz {
-          inherit skribe;
+          inherit skribe-kdist;
+          rev = self.rev or null;
+        };
+        skribe = final.callPackage ./nix/skribe {
+          inherit skribe-pyk skribe-kdist skribe-fuzz;
           rev = self.rev or null;
         };
       in {

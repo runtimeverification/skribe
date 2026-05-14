@@ -4,20 +4,14 @@
   makeWrapper,
   callPackage,
 
-  clang,
-  cmake,
-  git,
   k,
-  boost,
-  mpfr,
-  openssl,
-  gmp,
-  secp256k1,
   which,
   rust-bin,
 
   skribe-rust ? null,
   skribe-pyk,
+  skribe-kdist,
+  skribe-fuzz,
   rev ? null
 } @ args:
 let
@@ -29,67 +23,29 @@ stdenv.mkDerivation {
   pname = "skribe";
   version = if (rev != null) then rev else "dirty";
 
-  outputs = [
-    "bin"
-    # contains kdist artifacts
-    "out"
-    # this empty `dev` output is required as we otherwise get cyclic dependencies between `bin` and `out`
-    # this is due to a setup-hook creating references in a new directory `nix-support` in either `out` or `dev`
-    "dev"
-  ];
-
-  buildInputs = [
-    clang
-    cmake
-    git
-    boost
-    mpfr
-    openssl
-    gmp
-    secp256k1
-    skribe-pyk
-    k
-  ];
+  dontUnpack = true;
 
   nativeBuildInputs = [ makeWrapper ];
 
-  src = callPackage ../skribe-source { };
-
-  dontUseCmakeConfigure = true;
-
-  enableParallelBuilding = true;
-
-  buildPhase = ''
-    XDG_CACHE_HOME=$(pwd) ${
-      lib.optionalString
-      (stdenv.isAarch64 && stdenv.isDarwin)
-      "APPLE_SILICON=true"
-    } _JAVA_OPTIONS="-Xmx32g" skribe-kdist -v build 'stylus-semantics.*'
-  '';
-
   installPhase = ''
-    mkdir -p $bin/bin
-    mkdir -p $out/kdist
+    mkdir -p $out/bin
 
-    cp -r ./kdist-*/* $out/kdist/
-
-    makeWrapper ${skribe-pyk}/bin/skribe-simulation $bin/bin/skribe-simulation --prefix PATH : ${
+    makeWrapper ${skribe-pyk}/bin/skribe-simulation $out/bin/skribe-simulation --prefix PATH : ${
       lib.makeBinPath
-      ([ which k ] ++ lib.optionals (skribe-rust != null) [
+      ([ which k skribe-fuzz ] ++ lib.optionals (skribe-rust != null) [
         skribe-rust
       ])
-    } --set KDIST_DIR $out/kdist
+    } --set KDIST_DIR ${skribe-kdist}/kdist
 
-    makeWrapper ${skribe-pyk}/bin/skribe $bin/bin/skribe --prefix PATH : ${
+    makeWrapper ${skribe-pyk}/bin/skribe $out/bin/skribe --prefix PATH : ${
       lib.makeBinPath
-      ([ which k ] ++ lib.optionals (skribe-rust != null) [
+      ([ which k skribe-fuzz ] ++ lib.optionals (skribe-rust != null) [
         skribe-rust
       ])
-    } --set KDIST_DIR $out/kdist
+    } --set KDIST_DIR ${skribe-kdist}/kdist
   '';
 
   passthru = if skribe-rust == null then {
-    # list all supported solc versions here
     rust = callPackage ./default.nix (args // { skribe-rust = rustWithWasmTarget; });
   } else { };
 }

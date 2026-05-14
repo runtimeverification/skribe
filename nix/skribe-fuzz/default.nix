@@ -6,7 +6,7 @@
   makeWrapper,
   rust-bin,
 
-  skribe,
+  skribe-kdist,
   rev ? null
 }:
 let
@@ -32,7 +32,7 @@ rustPlatform.buildRustPackage {
 
   nativeBuildInputs = [ makeWrapper rustPlatform.bindgenHook ];
 
-  KLLVM_LIBRARY_PATH = "${skribe.out}/kdist/stylus-semantics/llvm-library";
+  KLLVM_LIBRARY_PATH = "${skribe-kdist}/kdist/stylus-semantics/llvm-library";
 
   postFixup =
     let
@@ -42,7 +42,7 @@ rustPlatform.buildRustPackage {
         else "LD_LIBRARY_PATH";
     in ''
       wrapProgram $out/bin/skribe-fuzz \
-        --prefix ${libPathVar} : ${skribe.out}/kdist/stylus-semantics/llvm-library
+        --prefix ${libPathVar} : ${skribe-kdist}/kdist/stylus-semantics/llvm-library
     '';
 
   # cargo-auditable in nixpkgs predates edition 2024 support
