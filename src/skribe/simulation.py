@@ -26,7 +26,7 @@ from skribe.kast.syntax import (
     steps_of,
 )
 
-from .utils import RECURSION_LIMIT, concrete_definition, load_wasm
+from .utils import RECURSION_LIMIT, STYLUS_WASM_PREFIX, PykHooks, concrete_definition
 
 if TYPE_CHECKING:
     from collections.abc import Iterable
@@ -80,12 +80,13 @@ def run(test_file: Path, depth: int | None) -> CompletedProcess:
     kast_steps = (step for item in steps_dict for step in steps_from_dict(item, test_file))
     program = steps_of(kast_steps)
 
-    return concrete_definition.krun_with_kast(
+    return concrete_definition.krun_with_pyk_hooks(
         pgm=program,
         sort=KSort('EthereumSimulation'),
         depth=depth,
         cmap=config_vars(),
         pmap=CONFIG_VAR_PARSERS,
+        hooks=PykHooks(test_file.parent),
     )
 
 
@@ -113,7 +114,8 @@ def steps_from_dict(d: dict[str, Any], file_path: Path) -> list[KInner]:
             wasm_path = abs_or_rel_to(Path(d['code']), file_path.parent)
             storage = json_to_storage_map(d.get('storage', {}))
             acct_id = parse_account_id(d['id'])
-            return [set_contract(id=acct_id, code=load_wasm(wasm_path), storage=storage)]
+            bytecode = STYLUS_WASM_PREFIX + wasm_path.read_bytes()
+            return [set_contract(id=acct_id, code=bytesToken(bytecode), storage=storage)]
         case 'setEVMContract':
             contract_dir = abs_or_rel_to(Path(d['directory']), file_path.parent)
             foundry = Foundry(contract_dir)

@@ -37,13 +37,10 @@ RECURSION_LIMIT: Final = 20000
 
 EXIT_CODE_PYK_HOOK: Final = 2
 
+STYLUS_WASM_PREFIX: Final = b'\xef\xf0\x00\x00'
+
 
 class SkribeError(RuntimeError): ...
-
-
-def load_wasm(file_path: Path) -> KInner:
-    with file_path.open(mode='rb') as f:
-        return wasm2kast(f, str(file_path))
 
 
 class SkribeDefinition:
