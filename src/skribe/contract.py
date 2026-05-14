@@ -15,6 +15,7 @@ from pyk.kast.inner import KSort
 from pyk.utils import run_process, single
 
 from .simulation import call_data
+from .utils import STYLUS_WASM_PREFIX
 
 if TYPE_CHECKING:
     from hypothesis.strategies import SearchStrategy
@@ -98,7 +99,8 @@ class StylusContract:
     def deployed_bytecode(self) -> bytes:
         wasm_file_name = self._name.replace('-', '_') + '.wasm'
         wasm_path = Path(self.manifest['target_directory']) / 'wasm32-unknown-unknown' / 'release' / wasm_file_name
-        return wasm_path.read_bytes()
+        bytecode = wasm_path.read_bytes()
+        return STYLUS_WASM_PREFIX + bytecode
 
 
 ArbitrumContract: TypeAlias = EVMContract | StylusContract
