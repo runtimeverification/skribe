@@ -13,19 +13,17 @@ use std::ptr;
 
 use libafl::{
     Fuzzer, StdFuzzer,
-    corpus::{InMemoryCorpus, OnDiskCorpus},
+    corpus::{Corpus, InMemoryCorpus, OnDiskCorpus, Testcase},
     events::SimpleEventManager,
     executors::{ExitKind, InProcessExecutor},
     feedbacks::{CrashFeedback, MaxMapFeedback},
-    generators::RandPrintablesGenerator,
     inputs::BytesInput,
     monitors::SimpleMonitor,
     mutators::{HavocScheduledMutator, havoc_mutations},
-    nonzero,
     observers::StdMapObserver,
     schedulers::QueueScheduler,
     stages::StdMutationalStage,
-    state::StdState,
+    state::{HasCorpus, StdState},
 };
 use libafl_bolts::{rands::StdRand, tuples::tuple_list};
 
@@ -142,13 +140,12 @@ fn actual_main() {
     )
     .expect("Failed to create the Executor");
 
-    // The random bytes generator. Generates bytearrays up to length 1024
-    let mut generator = RandPrintablesGenerator::new(nonzero!(1024));
-
-    // Generate initial inputs
+    // Initialize the corpus with a single byte array that will be mutated
+    // repeatedly.
     state
-        .generate_initial_inputs(&mut fuzzer, &mut executor, &mut generator, &mut mgr, 100)
-        .expect("Failed to generate the initial corpus");
+        .corpus_mut()
+        .add(Testcase::new(BytesInput::new(vec![0u8; 1024])))
+        .expect("Failed to initalize corpus");
 
     // Setup a mutational stage with a basic bytes mutator
     let mutator = HavocScheduledMutator::new(havoc_mutations());
