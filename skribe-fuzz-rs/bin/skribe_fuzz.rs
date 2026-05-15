@@ -20,6 +20,7 @@ use libafl::{
     inputs::BytesInput,
     monitors::SimpleMonitor,
     mutators::{HavocScheduledMutator, havoc_mutations},
+    nonzero,
     observers::StdMapObserver,
     schedulers::QueueScheduler,
     stages::StdMutationalStage,
@@ -70,6 +71,7 @@ fn actual_main() {
     artifacts_path.push(&contract_name);
     artifacts_path.push(&function_name);
     artifacts_path.push("artifacts");
+    let iterations: Option<u64> = args.opt_value_from_str("--iterations").unwrap_or(None);
 
     // Parse fuzz spec
     let contents = std::fs::read_to_string(fuzz_spec_file).unwrap();
@@ -149,11 +151,22 @@ fn actual_main() {
 
     // Setup a mutational stage with a basic bytes mutator
     let mutator = HavocScheduledMutator::new(havoc_mutations());
-    let mut stages = tuple_list!(StdMutationalStage::new(mutator));
+    let mut stages = tuple_list!(StdMutationalStage::with_max_iterations(
+        mutator,
+        nonzero!(1)
+    ));
 
-    fuzzer
-        .fuzz_loop(&mut stages, &mut executor, &mut state, &mut mgr)
-        .expect("Error in the fuzzing loop");
+    if let Some(iterations) = iterations {
+        println!("Executing for {} iterations", iterations);
+        fuzzer
+            .fuzz_loop_for(&mut stages, &mut executor, &mut state, &mut mgr, iterations)
+            .expect("Error in the fuzzing loop");
+    } else {
+        println!("Executing indefinitely");
+        fuzzer
+            .fuzz_loop(&mut stages, &mut executor, &mut state, &mut mgr)
+            .expect("Error in the fuzzing loop");
+    }
 }
 
 fn harness(data: &BytesInput) -> ExitKind {
