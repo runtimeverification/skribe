@@ -64,7 +64,7 @@ stdenv.mkDerivation {
       lib.optionalString
       (stdenv.isAarch64 && stdenv.isDarwin)
       "APPLE_SILICON=true"
-    } skribe-kdist -v build 'stylus-semantics.*'
+    } _JAVA_OPTIONS="-Xmx32g" skribe-kdist -v build 'stylus-semantics.*'
   '';
 
   installPhase = ''
