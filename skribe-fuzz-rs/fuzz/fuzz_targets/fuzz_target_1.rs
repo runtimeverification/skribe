@@ -7,37 +7,11 @@ use libfuzzer_sys::fuzz_target;
 use pico_args::Arguments;
 
 use skribe_fuzz_rs::{
-    FuzzSpec, Signature, SignatureAbi, fuzz_specs_from_json, get_exit_code,
-    kllvm::{self, MarshalError, Marshaller, VarHandler},
+    FuzzConfig, FuzzSpec, Signature, SignatureAbi, SignatureFuzzer, extract_template_and_signature,
+    fuzz_specs_from_json, get_exit_code,
+    kllvm::{self, Marshaller},
     kore,
 };
-
-struct FuzzConfig {
-    template: kore::Pattern,
-    abi: SignatureAbi,
-}
-
-struct SignatureFuzzer(Vec<u8>);
-
-impl VarHandler for SignatureFuzzer {
-    fn substitute(
-        &mut self,
-        name: &str,
-        _sort: &kore::Sort,
-    ) -> Result<kore::Pattern, kllvm::MarshalError> {
-        let sort = kore::Sort::App {
-            id: kore::Id::new("SortBytes".to_string()).unwrap(),
-            args: vec![],
-        };
-        let value = kore::Str(self.0.iter().map(|&b| b as char).collect());
-        match name {
-            "VarCALLDATA" => Ok(kore::Pattern::Dv { sort, value }),
-            _ => Err(MarshalError::Unsupported(
-                "Encountered a variable that isn't CALLDATA",
-            )),
-        }
-    }
-}
 
 // Persistent data across iterations.
 //
@@ -106,17 +80,3 @@ fuzz_target!( init: {
         FUZZ_CONFIG.replace(config_cell);
         MARSHALLER.replace(marshaller_cell);
 });
-
-pub fn extract_template_and_signature(
-    specs: Vec<FuzzSpec>,
-    contract_name: &str,
-    function_name: &str,
-) -> Option<(String, Signature)> {
-    specs.into_iter().find_map(|spec| {
-        let template = spec.template;
-        spec.signatures
-            .into_iter()
-            .find(|sig| sig.contract_name == contract_name && sig.name == function_name)
-            .map(|sig| (template.clone(), sig))
-    })
-}
