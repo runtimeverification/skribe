@@ -1421,6 +1421,7 @@ dependencies = [
 [[package]]
 name = "kframework"
 version = "0.1.0"
+source = "git+https://github.com/runtimeverification/kframework-rs.git?rev=a3ca113#a3ca113278188a3bdc7c525c7d712bb0173e0eda"
 dependencies = [
  "clap",
  "serde",
@@ -1430,6 +1431,7 @@ dependencies = [
 [[package]]
 name = "kframework_ffi"
 version = "0.1.0"
+source = "git+https://github.com/runtimeverification/kframework-rs.git?rev=a3ca113#a3ca113278188a3bdc7c525c7d712bb0173e0eda"
 dependencies = [
  "bindgen",
  "kframework",

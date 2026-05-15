@@ -12,8 +12,8 @@ alloy-json-abi = "1.5.7"
 alloy-primitives = "1.5.7"
 arbitrary = "1.4.2"
 hex-literal = "1.1.0"
-kframework = { git = "https://github.com/runtimeverification/kframework-rs.git", rev = "73c4986" }
-kframework_ffi = { git = "https://github.com/runtimeverification/kframework-rs.git", rev = "73c4986" }
+kframework = { git = "https://github.com/runtimeverification/kframework-rs.git", rev = "a3ca113" }
+kframework_ffi = { git = "https://github.com/runtimeverification/kframework-rs.git", rev = "a3ca113" }
 libafl = "0.15.4"
 libafl_bolts = "0.15.4"
 libfuzzer-sys = "0.4"
