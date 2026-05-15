@@ -17,6 +17,20 @@ pub fn fuzz_specs_from_json(json: &str) -> Result<Vec<FuzzSpec>, serde_json::Err
     serde_json::from_str(json)
 }
 
+pub fn extract_template_and_signature(
+    specs: Vec<FuzzSpec>,
+    contract_name: &str,
+    function_name: &str,
+) -> Option<(String, Signature)> {
+    specs.into_iter().find_map(|spec| {
+        let template = spec.template;
+        spec.signatures
+            .into_iter()
+            .find(|sig| sig.contract_name == contract_name && sig.name == function_name)
+            .map(|sig| (template.clone(), sig))
+    })
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
