@@ -1,16 +1,15 @@
-#![allow(static_mut_refs)]
-
 use arbitrary::Unstructured;
 use pico_args::Arguments;
 use skribe_fuzz_rs::{
     FuzzConfig, SignatureAbi, SignatureFuzzer, extract_template_and_signature,
-    fuzz_specs_from_json, get_exit_code,
+    fuzz_specs_from_json, get_coverage_size, get_exit_code,
     kllvm::{self, Marshaller},
-    kore,
+    kore, write_coverage_data,
 };
 
 use std::cell::Cell;
 use std::path::PathBuf;
+use std::ptr;
 
 use libafl::{
     Fuzzer, StdFuzzer,
@@ -30,9 +29,10 @@ use libafl::{
 };
 use libafl_bolts::{rands::StdRand, tuples::tuple_list};
 
-// Byte array for the coverage updates
-// TODO: Determine a proper length for this
-static mut SIGNALS: [u8; 16] = [0; 16];
+// Byte array pointer/size for the coverage updates
+// Initialized on startup
+static mut SIGNALS_PTR: *mut u8 = ptr::null_mut();
+static mut SIGNALS_LEN: usize = 0;
 
 // Persistent data across iterations.
 //
@@ -71,11 +71,18 @@ fn main() {
 
     let abi = SignatureAbi::from_signature(signature).unwrap();
 
+    let coverage_size = get_coverage_size(&template);
+
     FUZZ_CONFIG.replace(Some(FuzzConfig { template, abi }));
 
-    // Create an observation channel using the signals map
-    // TODO: Collect coverage info from the semantics and modify SIGNALS to reflect changes
-    let observer = unsafe { StdMapObserver::new("signals", &mut SIGNALS) };
+    // Create an observation channel for coverage
+    let alloc = vec![0u8; coverage_size].into_boxed_slice();
+    let leaked: &'static mut [u8] = Box::leak(alloc);
+    unsafe {
+        SIGNALS_PTR = leaked.as_mut_ptr();
+        SIGNALS_LEN = leaked.len();
+    }
+    let observer = unsafe { StdMapObserver::from_mut_ptr("signals", SIGNALS_PTR, SIGNALS_LEN) };
 
     // Feedback that rates what's interesting from the observer
     let mut feedback = MaxMapFeedback::new(&observer);
@@ -159,6 +166,10 @@ fn harness(data: &BytesInput) -> ExitKind {
 
     FUZZ_CONFIG.replace(config_cell);
     MARSHALLER.replace(marshaller_cell);
+
+    // Record coverage for this run
+    let signals: &mut [u8] = unsafe { std::slice::from_raw_parts_mut(SIGNALS_PTR, SIGNALS_LEN) };
+    write_coverage_data(&block, signals);
 
     // Check the exit code
     let exit_code = get_exit_code(&block);

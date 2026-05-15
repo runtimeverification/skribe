@@ -20,3 +20,13 @@ pub fn get_exit_code(block: &kllvm::Block) -> u32 {
 
     num_str.parse().unwrap()
 }
+
+pub fn write_coverage_data(block: &kllvm::Block, coverage: &mut [u8]) {
+    // Update coverage
+    // This should come in as a zeroed byte array every time, as it gets reset
+    // by the observer at the beginning of each execution
+}
+
+pub fn get_coverage_size(config: &kore::Pattern) -> usize {
+    100
+}
