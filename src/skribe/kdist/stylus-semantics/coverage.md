@@ -1,8 +1,6 @@
 ```k
 module COVERAGE
-    imports INT
-    imports BYTES
-    imports EVM-TYPES
+    imports CONFIGURATION
 
     syntax Bytes ::= #coverageOrDefault( coverage: Map
                                        , account : Int
@@ -52,5 +50,57 @@ module COVERAGE
                     , -1
                     )
                   ]
+
+
+    /*
+    override in evm-semantics/evm.md:
+
+    rule [pc.inc]:
+         <k> #pc [ OP ] => .K ... </k>
+         <pc> PCOUNT => PCOUNT +Int #widthOp(OP) </pc>
+    */
+    rule [pc.inc.cov]:
+         <stylusvms> .Bag </stylusvms>
+         <program> PROGRAM </program>
+         <codeAddr> ACCOUNT:Int </codeAddr>
+         <k> #pc [ OP ] => .K ... </k>
+         <pc> PCOUNT => PCOUNT +Int #widthOp(OP) </pc>
+         <coverage>
+           COVERAGE
+           =>
+           #updateCoverage(...
+             coverage: COVERAGE
+           , account : ACCOUNT
+           , codeLen : lengthBytes(PROGRAM)
+           , offset  : PCOUNT
+           , length  : #widthOp(OP)
+           )
+         </coverage>
+      [priority(10)]
+
+
+    /*
+    override in wasm-semantics/wasm.md:
+
+    rule <instrs> #instrWithPos(I, _, _) => I ... </instrs>
+    */
+    rule [wasm-instr-cov]:
+         <k> #endWasm ... </k>
+         <program> PROGRAM </program>
+         <codeAddr> ACCOUNT:Int </codeAddr>
+         <instrs> #instrWithPos(I, OFFSET, LENGTH) => I ... </instrs>
+         <coverage>
+           COVERAGE
+           =>
+           #updateCoverage(...
+             coverage: COVERAGE
+           , account : ACCOUNT
+           , codeLen : lengthBytes(PROGRAM)
+           , offset  : OFFSET
+           , length  : LENGTH
+           )
+         </coverage>
+      [priority(10)]
+
 endmodule
 ```

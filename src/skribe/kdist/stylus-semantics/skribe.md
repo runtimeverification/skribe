@@ -1,5 +1,6 @@
 
 ```k
+requires "coverage.md"
 requires "stylus.md"
 
 module SKRIBE-SYNTAX
@@ -33,6 +34,7 @@ module SKRIBE
     imports SKRIBE-SYNTAX-COMMON
     imports SKRIBE-ASSUME-CONCRETE
     imports SKRIBE-CHEAT-CODES
+    imports COVERAGE
 
     rule [steps-empty]:
         <k> .Steps => .K </k>
