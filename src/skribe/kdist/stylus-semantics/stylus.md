@@ -135,7 +135,6 @@ Wasm-based VM.
          => #initStylusVM ACCTCODE WASMMOD ~> #executeWasm #quoteUnparseWasmString("user_entrypoint")
             ...
         </k>
-        <program> _ => BYTES </program>
         <parsedWasmCache> ... ACCTCODE |-> WASMMOD ... </parsedWasmCache>
       requires isStylusBytecode(BYTES)
       [priority(30)]
