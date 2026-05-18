@@ -72,6 +72,7 @@ module SKRIBE
            <storage> _ => STORAGE </storage>
            ...
         </account>
+        <coverage> ... .Map => #initCoverage(... account: ACCT, code: CODE) ... </coverage>
         <stylusvms> .Bag </stylusvms>
       [priority(50)]
 
@@ -88,6 +89,7 @@ module SKRIBE
                 <nonce>            0                  </nonce>
               </account>
         )
+        <coverage> ... .Map => #initCoverage(... account: ADDR, code: CODE) ... </coverage>
         <stylusvms> .Bag </stylusvms>
       [priority(55)]
 
