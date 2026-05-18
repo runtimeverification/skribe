@@ -15,6 +15,7 @@ module EVM-COVERAGE
     */
     rule [pc.inc.cov]:
          <stylusvms> .Bag </stylusvms>
+         <program> PROGRAM </program>
          <codeAddr> ACCOUNT:Int </codeAddr>
          <k> #pc [ OP ] => .K ... </k>
          <pc> PCOUNT => PCOUNT +Int #widthOp(OP) </pc>
@@ -24,6 +25,7 @@ module EVM-COVERAGE
            #updateCoverage(...
              coverage: COVERAGE
            , account : ACCOUNT
+           , codeLen : lengthBytes(PROGRAM)
            , offset  : PCOUNT
            , length  : #widthOp(OP)
            )
