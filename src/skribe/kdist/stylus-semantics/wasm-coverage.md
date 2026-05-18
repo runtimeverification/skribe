@@ -13,6 +13,7 @@ module WASM-COVERAGE
     */
     rule [wasm-instr-cov]:
          <k> #endWasm ... </k>
+         <program> PROGRAM </program>
          <codeAddr> ACCOUNT:Int </codeAddr>
          <instrs> #instrWithPos(I, OFFSET, LENGTH) => I ... </instrs>
          <coverage>
@@ -21,6 +22,7 @@ module WASM-COVERAGE
            #updateCoverage(...
              coverage: COVERAGE
            , account : ACCOUNT
+           , codeLen : lengthBytes(PROGRAM)
            , offset  : OFFSET
            , length  : LENGTH
            )
