@@ -33,7 +33,6 @@ module WASM-OPERATIONS
             ...
           </stylusvm>)
         </stylusvms>
-        <program>      _ => .Bytes     </program>
         <jumpDests>    _ => .Bytes     </jumpDests>
         <pc>           _ => 0          </pc>
         <memoryUsed>   _ => 0          </memoryUsed>
