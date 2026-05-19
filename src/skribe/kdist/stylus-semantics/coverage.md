@@ -2,21 +2,24 @@
 module COVERAGE
     imports CONFIGURATION
 
-    syntax Map ::= #initCoverage( account : Int
+    syntax Map ::= #initCoverage( coverage: Map
+                                , account : Int
                                 , code    : AccountCode
                                 ) [total, function]
 
     rule #initCoverage(...
-           account: _
-         , code: _:ModuleDecl
+           coverage: COVERAGE
+         , account : _
+         , code    : _:ModuleDecl
          )
-      => .Map
+      => COVERAGE
 
     rule #initCoverage(...
-           account: ACCOUNT
-         , code: CODE:Bytes
+           coverage: COVERAGE
+         , account : ACCOUNT
+         , code    : CODE:Bytes
          )
-      => ACCOUNT |-> padRightBytes(.Bytes, lengthBytes(CODE), 0)
+      => COVERAGE [ ACCOUNT <- padRightBytes(.Bytes, lengthBytes(CODE), 0) ]
 
 
     syntax Map ::= #updateCoverage( coverage: Map
@@ -29,14 +32,14 @@ module COVERAGE
            coverage: COVERAGE
          , account : ACCOUNT
          , offset  : OFFSET
-         , length  : LEN
+         , length  : LENGTH
          )
       => COVERAGE [ ACCOUNT
                     <-
                     memsetBytes(
                       { COVERAGE[ACCOUNT] }:>Bytes
                     , OFFSET
-                    , LEN
+                    , LENGTH
                     , -1
                     )
                   ]
@@ -49,7 +52,7 @@ module COVERAGE
          , length  : _
          )
       => COVERAGE
-      requires notBool (ACCOUNT in_keys(COVERAGE))
+      requires notBool ( ACCOUNT in_keys(COVERAGE) )
 
 
     /* override in evm-semantics/evm.md
@@ -77,7 +80,15 @@ module COVERAGE
            <code> _ => OUT </code>
            ...
          </account>
-         <coverage> ... .Map => #initCoverage(... account: ACCT, code: OUT) ... </coverage>
+         <coverage>
+           COVERAGE
+           =>
+           #initCoverage(...
+             coverage: COVERAGE
+           , account : ACCT
+           , code    : OUT
+           )
+         </coverage>
       [priority(10)]
 
 
