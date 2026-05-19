@@ -1,5 +1,6 @@
 
 ```k
+requires "coverage.md"
 requires "stylus.md"
 
 module SKRIBE-SYNTAX
@@ -33,6 +34,7 @@ module SKRIBE
     imports SKRIBE-SYNTAX-COMMON
     imports SKRIBE-ASSUME-CONCRETE
     imports SKRIBE-CHEAT-CODES
+    imports COVERAGE
 
     rule [steps-empty]:
         <k> .Steps => .K </k>
@@ -70,6 +72,15 @@ module SKRIBE
            <storage> _ => STORAGE </storage>
            ...
         </account>
+        <coverage>
+          COVERAGE
+          =>
+          #initCoverage(...
+            coverage: COVERAGE
+          , account : ACCT
+          , code    : CODE
+          )
+        </coverage>
         <stylusvms> .Bag </stylusvms>
       [priority(50)]
 
@@ -86,6 +97,15 @@ module SKRIBE
                 <nonce>            0                  </nonce>
               </account>
         )
+        <coverage>
+          COVERAGE
+          =>
+          #initCoverage(...
+            coverage: COVERAGE
+          , account : ADDR
+          , code    : CODE
+          )
+        </coverage>
         <stylusvms> .Bag </stylusvms>
       [priority(55)]
 
@@ -94,7 +114,7 @@ module SKRIBE
     rule parseAndCacheIfNeeded(ACCT, CODE:Bytes) => #parseAndCacheWasm(ACCT)
       requires isStylusBytecode(CODE)
     rule parseAndCacheIfNeeded(_, _)             => .K                         [owise]
-    
+
     rule [callStylus]:
         <k> callStylus(FROM, TO, DATA, VALUE)
          => #call FROM TO TO VALUE VALUE DATA false
@@ -159,7 +179,7 @@ module SKRIBE
     rule [cheatcode.return]:
         <k> #cheatcode_returnStylus RET_LEN_PTR => .K ... </k>
         <instrs> (.K => #memStore(RET_LEN_PTR, Int2Bytes(4, lengthBytes(OUT), LE))
-                     ~> i32.const 0) 
+                     ~> i32.const 0)
                   ...
         </instrs>
         <output> OUT </output>

@@ -4,16 +4,12 @@ requires "configuration.md"
 requires "switch.md"
 requires "hostfuns.md"
 requires "memory-opt.md"
-requires "wasm-coverage.md"
-requires "evm-coverage.md"
 
 module STYLUS
     imports CONFIGURATION
     imports HOSTFUNS
     imports SWITCH
     imports WASM-MEMORY-OPT
-    imports WASM-COVERAGE
-    imports EVM-COVERAGE
 ```
 
 ## Stylus Contract Creation
@@ -139,7 +135,6 @@ Wasm-based VM.
          => #initStylusVM ACCTCODE WASMMOD ~> #executeWasm #quoteUnparseWasmString("user_entrypoint")
             ...
         </k>
-        <program> _ => BYTES </program>
         <parsedWasmCache> ... ACCTCODE |-> WASMMOD ... </parsedWasmCache>
       requires isStylusBytecode(BYTES)
       [priority(30)]
