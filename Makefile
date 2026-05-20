@@ -130,6 +130,12 @@ call_hello_wasm = $(call_hello_contract)/$(target_subdir)/call_hello.wasm
 $(call_hello_wasm):
 		cd $(call_hello_contract) && cargo build --release --lib --target wasm32-unknown-unknown
 
-test_wasms = $(hello_world_wasm) $(call_hello_wasm)
+erc20_contract = $(test_contracts_dir)/erc20
+erc20_wasm = $(call_hello_contract)/$(target_subdir)/erc20.wasm
+
+$(erc20_wasm):
+		cd $(erc20_contract) && cargo stylus build
+
+test_wasms = $(hello_world_wasm) $(call_hello_wasm) $(erc20_wasm)
 
 test-contracts: $(test_wasms)
