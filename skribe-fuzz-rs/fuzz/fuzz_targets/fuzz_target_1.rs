@@ -7,10 +7,10 @@ use libfuzzer_sys::fuzz_target;
 use pico_args::Arguments;
 
 use skribe_fuzz_rs::{
-    FuzzConfig, FuzzSpec, Signature, SignatureAbi, SignatureFuzzer, extract_template_and_signature,
+    FuzzConfig, SignatureAbi, SignatureFuzzer, extract_template_and_signature,
     fuzz_specs_from_json, get_exit_code,
     kllvm::{self, Marshaller},
-    kore,
+    kllvm_kore_block_dump_hotfix, kore,
 };
 
 // Persistent data across iterations.
@@ -71,8 +71,12 @@ fuzz_target!( init: {
         let mut block: kllvm::Block = kllvm_pattern.into();
         block.take_steps(-1);
 
+        let kore_text = block.to_string();
+        let mut parser = kore::Parser::new(kllvm_kore_block_dump_hotfix(&kore_text)).unwrap();
+        let pattern = parser.pattern().unwrap();
+
         // Check the exit code
-        let exit_code = get_exit_code(&block);
+        let exit_code = get_exit_code(&pattern);
         if exit_code != 0 {
             println!("panic!");
         }
