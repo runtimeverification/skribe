@@ -10,6 +10,7 @@ use skribe_fuzz_rs::{
 use std::cell::Cell;
 use std::path::PathBuf;
 use std::ptr;
+use std::time::Duration;
 
 use libafl::{
     Fuzzer, StdFuzzer,
@@ -133,12 +134,13 @@ fn actual_main() {
 
     // The executor which runs the harness
     let mut harness_binding = harness;
-    let mut executor = InProcessExecutor::new(
+    let mut executor = InProcessExecutor::with_timeout(
         &mut harness_binding,
         tuple_list!(observer),
         &mut fuzzer,
         &mut state,
         &mut mgr,
+        Duration::MAX,
     )
     .expect("Failed to create the Executor");
 
