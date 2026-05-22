@@ -2,10 +2,30 @@
 module COVERAGE
     imports CONFIGURATION
 
+    syntax CovEntry ::= #covEntry( offset: Int
+                                 , length: Int
+                                 ) [symbol(#covEntry)]
+
+    syntax Coverage ::= #coverage( size   : Int
+                                 , entries: Set
+                                 ) [symbol(#coverage)]
+                      | #addEntry( coverage: Coverage
+                                 , entry   : CovEntry
+                                 ) [function, total, symbol(#addEntry)]
+
+    rule #addEntry(...
+                    coverage: #coverage(... size: SIZE , entries: ENTRIES )
+                  , entry   : ENTRY
+                  )
+      => #coverage(...
+           size   : SIZE
+         , entries: ENTRIES |Set SetItem(ENTRY)
+         )
+
     syntax Map ::= #initCoverage( coverage: Map
                                 , account : Int
                                 , code    : AccountCode
-                                ) [total, function]
+                                ) [function, total, symbol(#initCoverage)]
 
     rule #initCoverage(...
            coverage: COVERAGE
@@ -19,14 +39,18 @@ module COVERAGE
          , account : ACCOUNT
          , code    : CODE:Bytes
          )
-      => COVERAGE [ ACCOUNT <- padRightBytes(.Bytes, lengthBytes(CODE), 0) ]
+      => COVERAGE [ ACCOUNT <- #coverage(...
+                                 size: lengthBytes(CODE)
+                               , entries: .Set
+                               )
+                  ]
 
 
     syntax Map ::= #updateCoverage( coverage: Map
                                   , account : Int
                                   , offset  : Int
                                   , length  : Int
-                                  ) [function]
+                                  ) [function, total, symbol(#updateCoverage)]
 
     rule #updateCoverage(...
            coverage: COVERAGE
@@ -36,11 +60,9 @@ module COVERAGE
          )
       => COVERAGE [ ACCOUNT
                     <-
-                    memsetBytes(
-                      { COVERAGE[ACCOUNT] }:>Bytes
-                    , OFFSET
-                    , LENGTH
-                    , -1
+                    #addEntry(...
+                      coverage: { COVERAGE[ACCOUNT] }:>Coverage
+                    , entry   : #covEntry(... offset: OFFSET , length: LENGTH )
                     )
                   ]
       requires ACCOUNT in_keys(COVERAGE)
