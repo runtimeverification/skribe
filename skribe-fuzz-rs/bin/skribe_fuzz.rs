@@ -45,19 +45,6 @@ thread_local! {
 }
 
 fn main() {
-    std::panic::set_hook(Box::new(|info| {
-        eprintln!("{}", info);
-    }));
-
-    let builder = std::thread::Builder::new().stack_size(64 * 1024 * 1024); // 64MB
-    let handler = builder.spawn(actual_main).unwrap();
-
-    if handler.join().is_err() {
-        std::process::exit(1);
-    }
-}
-
-fn actual_main() {
     kllvm::init();
 
     // Parse Arguments
