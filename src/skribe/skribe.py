@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import shutil
 import sys
 from functools import cached_property
@@ -17,7 +18,7 @@ from pyk.kore.parser import KoreParser
 from pyk.kore.syntax import EVar, SortApp
 from pyk.ktool.kfuzz import KFuzzHandler, fuzz
 from pyk.ktool.krun import KRunOutput
-from pyk.utils import run_process
+from pyk.utils import check_file_path, run_process
 
 from .contract import Signature, StylusContract, is_foundry_test, setup_method
 from .kast.syntax import (
@@ -73,6 +74,44 @@ class FuzzSpec(NamedTuple):
                 for signature in self.signatures
             ],
         }
+
+    @staticmethod
+    def load_specs(file_path: Path) -> list[FuzzSpec]:
+        check_file_path(file_path)
+
+        with file_path.open() as f:
+            dcts = json.load(f)
+
+        return [FuzzSpec.from_dict(dct) for dct in dcts]
+
+    @staticmethod
+    def from_dict(dct: Mapping[str, Any]) -> FuzzSpec:
+        def sig_from_dict(dct: Mapping[str, Any]) -> Signature:
+            match dct:
+                case {
+                    'contract_name': contract_name,
+                    'name': name,
+                    'arg_types': arg_types,
+                }:
+                    return Signature(
+                        contract_name=contract_name,
+                        name=name,
+                        arg_types=tuple(arg_types),
+                    )
+                case _:
+                    raise ValueError('Invalid Signature dictionary: {dct}')
+
+        match dct:
+            case {
+                'template': template_text,
+                'signatures': signatures,
+            }:
+                return FuzzSpec(
+                    template=KoreParser(template_text).pattern(),
+                    signatures=tuple(sig_from_dict(sig_dct) for sig_dct in signatures),
+                )
+            case _:
+                raise ValueError('Invalid FuzzSpec dictionary: {dct}')
 
 
 class Skribe:
@@ -210,9 +249,14 @@ class Skribe:
         max_examples: int,
         id: str | None = None,
         deadline: int | None = None,
+        fuzz_spec_file: Path | None = None,
     ) -> list[FuzzError]:
-        # Deploy
-        specs = self.init_specs()
+        specs: list[FuzzSpec]
+        if fuzz_spec_file:
+            specs = FuzzSpec.load_specs(fuzz_spec_file)
+        else:
+            # Deploy
+            specs = self.init_specs()
 
         # Run
         errors: list[FuzzError] = []

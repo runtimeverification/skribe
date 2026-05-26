@@ -5,7 +5,7 @@ import sys
 from argparse import ArgumentParser, ArgumentTypeError
 from pathlib import Path
 
-from pyk.cli.utils import ensure_dir_path
+from pyk.cli.utils import ensure_dir_path, file_path
 from rich.console import Console
 
 from .skribe import InitializationError, Skribe
@@ -54,7 +54,13 @@ def _exec_export_specs(dir_path: Path | None) -> None:
     exit(0)
 
 
-def _exec_run(dir_path: Path | None, id: str | None, max_examples: int, deadline: int | None) -> None:
+def _exec_run(
+    dir_path: Path | None,
+    id: str | None,
+    max_examples: int,
+    deadline: int | None,
+    fuzz_spec_file: Path | None,
+) -> None:
     """
     Executes fuzz tests for the Skribe test contract located at the given path.
 
@@ -67,6 +73,7 @@ def _exec_run(dir_path: Path | None, id: str | None, max_examples: int, deadline
         id: Name of the test function to run. If None, runs all tests.
         max_examples: Maximum number of fuzzing examples to run per test.
         deadline: Fuzzer iteration deadline in milliseconds, or ``None`` for no dealine.
+        fuzz_spec_file: Path to fuzzer spec file, or ``None`` for computing the spec on-the-fly.
 
     Returns:
         None
@@ -78,7 +85,12 @@ def _exec_run(dir_path: Path | None, id: str | None, max_examples: int, deadline
     skribe = Skribe(concrete_definition, dir_path)
 
     try:
-        failed = skribe.deploy_and_run(id=id, max_examples=max_examples, deadline=deadline)
+        failed = skribe.deploy_and_run(
+            id=id,
+            max_examples=max_examples,
+            deadline=deadline,
+            fuzz_spec_file=fuzz_spec_file,
+        )
     except InitializationError:
         err_console.print('[bold red]Initialization failed[/bold red]')
         exit(1)
@@ -133,6 +145,12 @@ def _argument_parser() -> ArgumentParser:
         default=None,
         help='Fuzzer iteration deadline in milliseconds (default: 0 - no deadline).',
     )
+    run_parser.add_argument(
+        '--fuzz-spec',
+        type=file_path,
+        default=None,
+        help='Path to fuzzer specification file (default: None).',
+    )
     return parser
 
 
@@ -144,7 +162,13 @@ def main() -> None:
 
     match args.command:
         case 'run':
-            _exec_run(dir_path=args.directory, id=args.id, max_examples=args.max_examples, deadline=args.deadline)
+            _exec_run(
+                dir_path=args.directory,
+                id=args.id,
+                max_examples=args.max_examples,
+                deadline=args.deadline,
+                fuzz_spec_file=args.fuzz_spec,
+            )
         case 'build':
             _exec_build(dir_path=args.directory)
         case 'export-specs':
