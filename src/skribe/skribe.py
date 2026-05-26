@@ -173,6 +173,7 @@ class Skribe:
         signature: Signature,
         max_examples: int,
         task: FuzzTask,
+        deadline: int | None = None,
     ) -> None:
         """Given a configuration with a deployed test contract, fuzz over the tests for the supplied signature.
 
@@ -180,6 +181,7 @@ class Skribe:
             template_pattern: The template KORE configuration.
             signature: The signature of the test to fuzz over.
             max_examples: The maximum number of fuzzing test cases to generate and execute.
+            deadline: Fuzzer iteration deadline in milliseconds, or ``None`` for no dealine.
 
         Raises:
             AssertionError if the test fails
@@ -199,18 +201,23 @@ class Skribe:
             max_examples=max_examples,
             handler=KometFuzzHandler(self.definition, task),
             subst_func=subst_on_k_cell,
-            deadline=20000,
+            deadline=deadline,
         )
         task.end()
 
-    def deploy_and_run(self, max_examples: int, id: str | None = None) -> list[FuzzError]:
+    def deploy_and_run(
+        self,
+        max_examples: int,
+        id: str | None = None,
+        deadline: int | None = None,
+    ) -> list[FuzzError]:
         # Deploy
         specs = self.init_specs()
 
         # Run
         errors: list[FuzzError] = []
         for spec in specs:
-            errors += self._run_spec(spec, max_examples, id)
+            errors += self._run_spec(spec, max_examples, id, deadline=deadline)
 
         return errors
 
@@ -219,14 +226,20 @@ class Skribe:
         specs = [self._create_spec(contract) for contract in contracts]
         return specs
 
-    def _run_spec(self, spec: FuzzSpec, max_examples: int, id: str | None = None) -> list[FuzzError]:
+    def _run_spec(
+        self,
+        spec: FuzzSpec,
+        max_examples: int,
+        id: str | None = None,
+        deadline: int | None = None,
+    ) -> list[FuzzError]:
         signatures = _filter_signatures(spec.signatures, id=id)
 
         errors: list[FuzzError] = []
         with FuzzProgress(signatures, max_examples) as progress:
             for task in progress.fuzz_tasks:
                 try:
-                    self.run_test(spec.template, task.signature, max_examples, task)
+                    self.run_test(spec.template, task.signature, max_examples, task, deadline=deadline)
                 except FuzzError as e:
                     task.fail()
                     errors.append(e)
