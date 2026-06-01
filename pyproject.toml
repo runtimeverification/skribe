@@ -10,7 +10,7 @@ readme = "README.md"
 requires-python = "~=3.10"
 dependencies = [
     "pykwasm@git+https://github.com/runtimeverification/wasm-semantics.git@v0.1.155#subdirectory=pykwasm",
-    "kontrol@git+https://github.com/runtimeverification/kontrol.git@c1b81cf",
+    "kontrol@git+https://github.com/runtimeverification/kontrol.git@v1.0.241",
 ]
 
 [[project.authors]]
