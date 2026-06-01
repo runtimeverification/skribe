@@ -10,7 +10,7 @@ use skribe_fuzz_rs::{
     FuzzConfig, SignatureAbi, SignatureFuzzer, extract_template_and_signature,
     fuzz_specs_from_json, get_exit_code,
     kllvm::{self, Marshaller},
-    kllvm_kore_block_dump_hotfix, kore,
+    kore,
 };
 
 // Persistent data across iterations.
@@ -72,7 +72,7 @@ fuzz_target!( init: {
         block.take_steps(-1);
 
         let kore_text = block.to_string();
-        let mut parser = kore::Parser::new(kllvm_kore_block_dump_hotfix(&kore_text)).unwrap();
+        let mut parser = kore::Parser::new(&kore_text).unwrap();
         let pattern = parser.pattern().unwrap();
 
         // Check the exit code

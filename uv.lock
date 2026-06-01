@@ -278,14 +278,14 @@ wheels = [
 
 [[package]]
 name = "click"
-version = "8.4.0"
+version = "8.4.1"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "colorama", marker = "sys_platform == 'win32'" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/23/e4/796662cd90cf80e3a363c99db2b88e0e394b988a575f60a17e16440cd011/click-8.4.0.tar.gz", hash = "sha256:638f1338fe1235c8f4e008e4a8a254fb5c5fbdcbb40ece3c9142ebb78e792973", size = 350843, upload-time = "2026-05-17T00:47:58.425Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/9b/98/518d8e5081007684232226f475082b30087d0f585e8457db087298259f49/click-8.4.1.tar.gz", hash = "sha256:918b5633eddf6b41c32d4f454bf0de810065c74e3f7dbf8ee5452f8be88d3e96", size = 353007, upload-time = "2026-05-22T04:08:37.769Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/ee/ae/8e92f8058baf87f6c7d86ee7e457668690195cc77efedb8d3797a06e3940/click-8.4.0-py3-none-any.whl", hash = "sha256:40c50b7c6c6adac2823d411041ec84f3f103f1b280d5e9ce0d7f998995832f81", size = 116147, upload-time = "2026-05-17T00:47:56.842Z" },
+    { url = "https://files.pythonhosted.org/packages/c7/0d/67e5b4109ea4a837e80daa87c2c696711955e40449a97e8926672534def2/click-8.4.1-py3-none-any.whl", hash = "sha256:482be17c6991b8c19c5429a1e995d9b0efdbb63172824c41f99965dc0ade8ec2", size = 116639, upload-time = "2026-05-22T04:08:35.26Z" },
 ]
 
 [[package]]
@@ -495,7 +495,7 @@ name = "exceptiongroup"
 version = "1.3.1"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "typing-extensions", marker = "python_full_version < '3.11'" },
+    { name = "typing-extensions", marker = "python_full_version < '3.13'" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/50/79/66800aadf48771f6b62f7eb014e352e5d06856655206165d775e675a02c9/exceptiongroup-1.3.1.tar.gz", hash = "sha256:8b412432c6055b0b7d14c310000ae93352ed6754f70fa8f7c34141f91c4e3219", size = 30371, upload-time = "2025-11-21T23:01:54.787Z" }
 wheels = [
@@ -643,24 +643,24 @@ wheels = [
 
 [[package]]
 name = "hypothesis"
-version = "6.152.9"
+version = "6.155.1"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "exceptiongroup", marker = "python_full_version < '3.11'" },
     { name = "sortedcontainers" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/3b/fb/a5651eb0cd03ecee644e8f4d8cd2027b40a08bf1488f46201e794aebe9b5/hypothesis-6.152.9.tar.gz", hash = "sha256:de4711d69ce3a18009047c3b44882810fd0c0348c1558e920a4b0d2c45f59e1e", size = 472009, upload-time = "2026-05-19T17:10:19.586Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/49/ef/4a94c12429986a90076057513e084bf32106a9bdc62c8e29f58673dd85a2/hypothesis-6.155.1.tar.gz", hash = "sha256:07c102031612b98d7c1be15ca3608c43e1234d9d07e3a190a53fa01536700196", size = 477300, upload-time = "2026-05-29T23:12:57.515Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/79/d9/40ef7ed22f0c45c2316467edb9afb8fc172cd089cb329c0ee6da6b74416c/hypothesis-6.152.9-py3-none-any.whl", hash = "sha256:9c4fdccb1eac0b12ec740c12290d0e6a0bea3526a3f0bf812b7643bb563c2d8b", size = 538148, upload-time = "2026-05-19T17:10:16.131Z" },
+    { url = "https://files.pythonhosted.org/packages/26/6e/8c9cf32201238617454303b1605dfa667d90cd1ef51226f92d9c2b3b8f7c/hypothesis-6.155.1-py3-none-any.whl", hash = "sha256:2753f469df3ba3c483b08e0c37dbcbc41d8316ebb921abcc07493ee9c8a7d187", size = 543715, upload-time = "2026-05-29T23:12:54.77Z" },
 ]
 
 [[package]]
 name = "idna"
-version = "3.15"
+version = "3.17"
 source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/82/77/7b3966d0b9d1d31a36ddf1746926a11dface89a83409bf1483f0237aa758/idna-3.15.tar.gz", hash = "sha256:ca962446ea538f7092a95e057da437618e886f4d349216d2b1e294abfdb65fdc", size = 199245, upload-time = "2026-05-12T22:45:57.011Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/b9/28/99c51f664567218d824af024c0251650fb27e4ca066df188dab0769c5b91/idna-3.17.tar.gz", hash = "sha256:5eb0cb53bc467c12eadcf6de83163ad8527cec9416f44b9b61b19caedad2b87f", size = 196048, upload-time = "2026-05-28T14:32:38.55Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/d2/23/408243171aa9aaba178d3e2559159c24c1171a641aa83b67bdd3394ead8e/idna-3.15-py3-none-any.whl", hash = "sha256:048adeaf8c2d788c40fee287673ccaa74c24ffd8dcf09ffa555a2fbb59f10ac8", size = 72340, upload-time = "2026-05-12T22:45:55.733Z" },
+    { url = "https://files.pythonhosted.org/packages/de/a7/f76514cc40ad6234098ecdebda08732d75964776c51a42845b7da10649e2/idna-3.17-py3-none-any.whl", hash = "sha256:466e48829084efe2548012b855df21540b96f2e20e51bd124c851536556a592c", size = 65316, upload-time = "2026-05-28T14:32:37.035Z" },
 ]
 
 [[package]]
@@ -695,8 +695,8 @@ wheels = [
 
 [[package]]
 name = "kevm-pyk"
-version = "1.0.902"
-source = { git = "https://github.com/runtimeverification/evm-semantics.git?subdirectory=kevm-pyk&rev=v1.0.902#a304f515b3bcccb5cd38dbc74008996d9b380400" }
+version = "1.0.906"
+source = { git = "https://github.com/runtimeverification/evm-semantics.git?subdirectory=kevm-pyk&rev=v1.0.906#e5ed2c39c9f6267411479123c4226d6ed82ff6d2" }
 dependencies = [
     { name = "frozendict" },
     { name = "kframework" },
@@ -706,7 +706,7 @@ dependencies = [
 
 [[package]]
 name = "kframework"
-version = "7.1.323"
+version = "7.1.329"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "coloredlogs" },
@@ -725,15 +725,15 @@ dependencies = [
     { name = "tomli-w" },
     { name = "xdg-base-dirs" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/2a/d9/a88f051a023540ea9bbab889183bb87e01869c4ebf6565de32bd5b93b439/kframework-7.1.323.tar.gz", hash = "sha256:29f1ef525a29ba2a1410614ce05c4526e6e44b977232ca107f50ff2750d4e149", size = 245892, upload-time = "2026-05-12T14:44:19.937Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/4c/40/895de798a05cfd2a332fa3280e4a1483d4b5a5ec55ccc6833be91d65019f/kframework-7.1.329.tar.gz", hash = "sha256:2b7cd443520d7825a0d25b8a5f0a26a2a6def782f5d6b7f018134451ea0b5553", size = 247959, upload-time = "2026-05-30T06:06:08.341Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/e7/db/d555255f53fdb36ffdcdfb303529f07e939018ddb58a4392eb13f19dbe4d/kframework-7.1.323-py3-none-any.whl", hash = "sha256:d0b23ccf44babb5e3ac735e00242d0a41435864ec66012d761cf6718aee53413", size = 297459, upload-time = "2026-05-12T14:44:18.443Z" },
+    { url = "https://files.pythonhosted.org/packages/95/6d/a245efc02f35fdd3d3542d94a16b55d0f8f2f97c39798737c155d6f38140/kframework-7.1.329-py3-none-any.whl", hash = "sha256:c28ae3c545a7fffe64e140f2d545283e384d742662474b183c297f5a34b86a71", size = 299676, upload-time = "2026-05-30T06:06:06.876Z" },
 ]
 
 [[package]]
 name = "kontrol"
-version = "1.0.0"
-source = { git = "https://github.com/runtimeverification/kontrol.git?rev=c1b81cf#c1b81cfd62426dda00b824ddf166f31b50c26713" }
+version = "1.0.241"
+source = { git = "https://github.com/runtimeverification/kontrol.git?rev=v1.0.241#beb986be258540fed48ae4f2ea45708001981183" }
 dependencies = [
     { name = "eth-abi" },
     { name = "eth-utils" },
@@ -1198,11 +1198,11 @@ wheels = [
 
 [[package]]
 name = "platformdirs"
-version = "4.9.6"
+version = "4.10.0"
 source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/9f/4a/0883b8e3802965322523f0b200ecf33d31f10991d0401162f4b23c698b42/platformdirs-4.9.6.tar.gz", hash = "sha256:3bfa75b0ad0db84096ae777218481852c0ebc6c727b3168c1b9e0118e458cf0a", size = 29400, upload-time = "2026-04-09T00:04:10.812Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/d7/47/e4501f49c178ae1d9f4a75073fda4204f52647993f075a9db4d14930e0c5/platformdirs-4.10.0.tar.gz", hash = "sha256:31e761a6a0ca04faf7353ea759bdba55652be214725111e5aac52dfa29d4bef7", size = 31224, upload-time = "2026-05-28T03:32:53.587Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/75/a6/a0a304dc33b49145b21f4808d763822111e67d1c3a32b524a1baf947b6e1/platformdirs-4.9.6-py3-none-any.whl", hash = "sha256:e61adb1d5e5cb3441b4b7710bea7e4c12250ca49439228cc1021c00dcfac0917", size = 21348, upload-time = "2026-04-09T00:04:09.463Z" },
+    { url = "https://files.pythonhosted.org/packages/81/e6/cd9575ac904136b3cbf7aa7ee819ef86eedb7274e46f230e94ea4342e729/platformdirs-4.10.0-py3-none-any.whl", hash = "sha256:fb516cdb12eb0d857d0cd85a7c57cea4d060bee4578d6cf5a14dfdf8cbf8784a", size = 22743, upload-time = "2026-05-28T03:32:52.175Z" },
 ]
 
 [[package]]
@@ -1473,8 +1473,8 @@ wheels = [
 
 [[package]]
 name = "pykwasm"
-version = "0.1.155"
-source = { git = "https://github.com/runtimeverification/wasm-semantics.git?subdirectory=pykwasm&rev=v0.1.155#bd5cbe7bfb3aafbeb4740884fed905394b542320" }
+version = "0.1.156"
+source = { git = "https://github.com/runtimeverification/wasm-semantics.git?subdirectory=pykwasm&rev=v0.1.156#194cccdfd8cf002086cead044ad0b90b64060002" }
 dependencies = [
     { name = "kframework" },
     { name = "py-wasm" },
@@ -1888,7 +1888,7 @@ wheels = [
 
 [[package]]
 name = "skribe"
-version = "0.1.48"
+version = "0.1.49"
 source = { editable = "." }
 dependencies = [
     { name = "kontrol" },
@@ -1916,8 +1916,8 @@ dev = [
 
 [package.metadata]
 requires-dist = [
-    { name = "kontrol", git = "https://github.com/runtimeverification/kontrol.git?rev=c1b81cf" },
-    { name = "pykwasm", git = "https://github.com/runtimeverification/wasm-semantics.git?subdirectory=pykwasm&rev=v0.1.155" },
+    { name = "kontrol", git = "https://github.com/runtimeverification/kontrol.git?rev=v1.0.241" },
+    { name = "pykwasm", git = "https://github.com/runtimeverification/wasm-semantics.git?subdirectory=pykwasm&rev=v0.1.156" },
 ]
 
 [package.metadata.requires-dev]
