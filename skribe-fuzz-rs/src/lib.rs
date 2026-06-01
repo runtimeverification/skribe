@@ -238,10 +238,3 @@ fn match_dv<'a>(pattern: &'a kore::Pattern, sort: &str) -> Result<&'a str, Strin
 fn match_int(pattern: &kore::Pattern) -> Result<&str, String> {
     match_dv(pattern, "SortInt")
 }
-
-pub fn kllvm_kore_block_dump_hotfix(s: &str) -> &str {
-    // TODO This is a hotfix for a bug in kore_block_dump
-    let terminator = r#"Lbl'-LT-'generatedCounter'-GT-'{}(\dv{SortInt{}}("0")))"#;
-    let pos = s.find(terminator).expect("terminator not found");
-    &s[..pos + terminator.len()]
-}

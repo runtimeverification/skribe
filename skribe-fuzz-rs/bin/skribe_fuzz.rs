@@ -4,7 +4,7 @@ use skribe_fuzz_rs::{
     FuzzConfig, SignatureAbi, SignatureFuzzer, extract_template_and_signature,
     fuzz_specs_from_json, get_coverage_size, get_exit_code,
     kllvm::{self, Marshaller},
-    kllvm_kore_block_dump_hotfix, kore, write_coverage_data,
+    kore, write_coverage_data,
 };
 
 use std::cell::Cell;
@@ -183,7 +183,7 @@ fn harness(data: &BytesInput) -> ExitKind {
     let signals: &mut [u8] = unsafe { std::slice::from_raw_parts_mut(SIGNALS_PTR, SIGNALS_LEN) };
 
     let kore_text = block.to_string();
-    let mut parser = kore::Parser::new(kllvm_kore_block_dump_hotfix(&kore_text)).unwrap();
+    let mut parser = kore::Parser::new(&kore_text).unwrap();
     let pattern = parser.pattern().unwrap();
 
     write_coverage_data(&pattern, signals);
