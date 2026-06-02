@@ -40,6 +40,7 @@ fuzz_target!( init: {
     let function_name: String = args
         .value_from_str("--function-name")
         .unwrap();
+    let coverage: bool = args.contains("--coverage");
 
     // Parse fuzz spec
     let contents = std::fs::read_to_string(fuzz_spec_file).unwrap();
@@ -51,7 +52,11 @@ fuzz_target!( init: {
 
     let abi = SignatureAbi::from_signature(signature).unwrap();
 
-    FUZZ_CONFIG.replace(Some(FuzzConfig { template, abi }));
+    FUZZ_CONFIG.replace(Some(FuzzConfig {
+        template,
+        abi,
+        coverage,
+    }));
 },
     |data: &[u8]| {
         let mut marshaller_cell: Option<Marshaller<_>> = MARSHALLER.take();
@@ -62,7 +67,8 @@ fuzz_target!( init: {
         // Marshal over to kllvm with the CALLDATA variable substituted
         let mut u = Unstructured::new(data);
         let input = config.abi.arbitrary_input(&mut u).unwrap();
-        let sig = SignatureFuzzer(input);
+        let coverage = config.coverage;
+        let sig = SignatureFuzzer{ input, coverage };
         marshaller.set_handler(sig);
         let template = &config.template;
         let kllvm_pattern: kllvm::Pattern = marshaller.marshal(template).unwrap();

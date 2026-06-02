@@ -29,13 +29,6 @@ module COVERAGE
 
     rule #initCoverage(...
            coverage: COVERAGE
-         , account : _
-         , code    : _:ModuleDecl
-         )
-      => COVERAGE
-
-    rule #initCoverage(...
-           coverage: COVERAGE
          , account : ACCOUNT
          , code    : CODE:Bytes
          )
@@ -45,15 +38,25 @@ module COVERAGE
                                )
                   ]
 
+    rule #initCoverage(...
+           coverage: COVERAGE
+         , account : _
+         , code    : _
+         )
+      => COVERAGE
+      [owise]
 
-    syntax Map ::= #updateCoverage( coverage: Map
+
+    syntax Map ::= #updateCoverage( enabled : Bool
+                                  , coverage: Map
                                   , account : Int
                                   , offset  : Int
                                   , length  : Int
                                   ) [function, total, symbol(#updateCoverage)]
 
     rule #updateCoverage(...
-           coverage: COVERAGE
+           enabled : ENABLED
+         , coverage: COVERAGE
          , account : ACCOUNT
          , offset  : OFFSET
          , length  : LENGTH
@@ -65,16 +68,18 @@ module COVERAGE
                     , entry   : #covEntry(... offset: OFFSET , length: LENGTH )
                     )
                   ]
-      requires ACCOUNT in_keys(COVERAGE)
+      requires ENABLED
+       andBool ACCOUNT in_keys(COVERAGE)
 
     rule #updateCoverage(...
-           coverage: COVERAGE
-         , account : ACCOUNT
+           enabled : _
+         , coverage: COVERAGE
+         , account : _
          , offset  : _
          , length  : _
          )
       => COVERAGE
-      requires notBool ( ACCOUNT in_keys(COVERAGE) )
+      [owise]
 
 
     /* override in evm-semantics/evm.md
@@ -128,12 +133,14 @@ module COVERAGE
            COVERAGE
            =>
            #updateCoverage(...
-             coverage: COVERAGE
+             enabled : ENABLED
+           , coverage: COVERAGE
            , account : ACCOUNT
            , offset  : PCOUNT
            , length  : #widthOp(OP)
            )
          </coverage>
+         <coverageEnabled> ENABLED </coverageEnabled>
          <stylusvms> .Bag </stylusvms>
       [priority(10)]
 
@@ -149,12 +156,14 @@ module COVERAGE
            COVERAGE
            =>
            #updateCoverage(...
-             coverage: COVERAGE
+             enabled : ENABLED
+           , coverage: COVERAGE
            , account : ACCOUNT
            , offset  : OFFSET
            , length  : LENGTH
            )
          </coverage>
+         <coverageEnabled> ENABLED </coverageEnabled>
          <k> #endWasm ... </k>
       [priority(10)]
 

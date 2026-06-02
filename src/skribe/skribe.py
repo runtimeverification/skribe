@@ -8,13 +8,16 @@ from pathlib import Path
 from typing import TYPE_CHECKING, NamedTuple
 
 from eth_abi import decode, encode
+from hypothesis import strategies as st
 from kontrol.foundry import Foundry
 from pyk.kast.inner import KSort, KToken, KVariable
 from pyk.kast.manip import Subst, split_config_from
 from pyk.kast.prelude.bytes import BYTES, bytesToken, pretty_bytes
 from pyk.kast.prelude.k import GENERATED_TOP_CELL
+from pyk.kast.prelude.kbool import BOOL
 from pyk.konvert import kast_to_kore, kore_to_kast
 from pyk.kore.parser import KoreParser
+from pyk.kore.prelude import dv
 from pyk.kore.syntax import EVar, SortApp
 from pyk.ktool.kfuzz import KFuzzHandler, fuzz
 from pyk.ktool.krun import KRunOutput
@@ -32,7 +35,7 @@ from .kast.syntax import (
 )
 from .progress import FuzzProgress
 from .simulation import CONFIG_VAR_PARSERS, call_data, config_vars
-from .utils import RECURSION_LIMIT, PykHooks, SkribeError, subst_on_k_cell
+from .utils import RECURSION_LIMIT, PykHooks, SkribeError
 
 if TYPE_CHECKING:
     from collections.abc import Iterable, Mapping
@@ -48,6 +51,9 @@ if TYPE_CHECKING:
 
 CALLDATA = KVariable('CALLDATA', BYTES)
 CALLDATA_EVAR = EVar('VarCALLDATA', SortApp('SortBytes'))
+
+COVERAGE_ENABLED = KVariable('COVERAGE_ENABLED', BOOL)
+COVERAGE_ENABLED_EVAR = EVar("VarCOVERAGE'Unds'ENABLED", SortApp('SortBool'))
 
 TRUE_DATA = encode(['bool'], [True])
 EMPTY_DATA = encode([], [])
@@ -213,6 +219,7 @@ class Skribe:
         max_examples: int,
         task: FuzzTask,
         deadline: int | None = None,
+        coverage_enabled: bool | None = None,
     ) -> None:
         """Given a configuration with a deployed test contract, fuzz over the tests for the supplied signature.
 
@@ -221,6 +228,7 @@ class Skribe:
             signature: The signature of the test to fuzz over.
             max_examples: The maximum number of fuzzing test cases to generate and execute.
             deadline: Fuzzer iteration deadline in milliseconds, or ``None`` for no dealine.
+            coverage_enabled: Whether coverage tracking is enabled.
 
         Raises:
             AssertionError if the test fails
@@ -229,7 +237,10 @@ class Skribe:
         def calldata_to_kore(data: bytes) -> Pattern:
             return kast_to_kore(self.definition.kdefinition, bytesToken(data), BYTES)
 
-        template_subst = {CALLDATA_EVAR: signature.argument_strategy().map(calldata_to_kore)}
+        template_subst = {
+            CALLDATA_EVAR: signature.argument_strategy().map(calldata_to_kore),
+            COVERAGE_ENABLED_EVAR: st.just(dv(bool(coverage_enabled))),
+        }
 
         task.start()
         fuzz(
@@ -239,7 +250,6 @@ class Skribe:
             check_exit_code=True,
             max_examples=max_examples,
             handler=KometFuzzHandler(self.definition, task),
-            subst_func=subst_on_k_cell,
             deadline=deadline,
         )
         task.end()
@@ -249,6 +259,7 @@ class Skribe:
         max_examples: int,
         id: str | None = None,
         deadline: int | None = None,
+        coverage_enabled: bool | None = None,
         fuzz_spec_file: Path | None = None,
     ) -> list[FuzzError]:
         specs: list[FuzzSpec]
@@ -261,7 +272,13 @@ class Skribe:
         # Run
         errors: list[FuzzError] = []
         for spec in specs:
-            errors += self._run_spec(spec, max_examples, id, deadline=deadline)
+            errors += self._run_spec(
+                spec,
+                max_examples,
+                id,
+                deadline=deadline,
+                coverage_enabled=coverage_enabled,
+            )
 
         return errors
 
@@ -276,6 +293,7 @@ class Skribe:
         max_examples: int,
         id: str | None = None,
         deadline: int | None = None,
+        coverage_enabled: bool | None = None,
     ) -> list[FuzzError]:
         signatures = _filter_signatures(spec.signatures, id=id)
 
@@ -283,7 +301,14 @@ class Skribe:
         with FuzzProgress(signatures, max_examples) as progress:
             for task in progress.fuzz_tasks:
                 try:
-                    self.run_test(spec.template, task.signature, max_examples, task, deadline=deadline)
+                    self.run_test(
+                        spec.template,
+                        task.signature,
+                        max_examples,
+                        task,
+                        deadline=deadline,
+                        coverage_enabled=coverage_enabled,
+                    )
                 except FuzzError as e:
                     task.fail()
                     errors.append(e)
@@ -324,6 +349,7 @@ class Skribe:
             set_exit_code(0),
         ]
         init_subst['K_CELL'] = steps_of(k_steps)
+        init_subst['COVERAGEENABLED_CELL'] = COVERAGE_ENABLED
         template_conf = Subst(init_subst).apply(template_conf)
         template_pattern = kast_to_kore(self.definition.kdefinition, template_conf, GENERATED_TOP_CELL)
 

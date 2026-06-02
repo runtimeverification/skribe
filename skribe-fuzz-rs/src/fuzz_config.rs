@@ -6,9 +6,13 @@ use crate::SignatureAbi;
 pub struct FuzzConfig {
     pub template: kore::Pattern,
     pub abi: SignatureAbi,
+    pub coverage: bool,
 }
 
-pub struct SignatureFuzzer(pub Vec<u8>);
+pub struct SignatureFuzzer {
+    pub input: Vec<u8>,
+    pub coverage: bool,
+}
 
 impl VarHandler for SignatureFuzzer {
     fn substitute(
@@ -16,16 +20,24 @@ impl VarHandler for SignatureFuzzer {
         name: &str,
         _sort: &kore::Sort,
     ) -> Result<kore::Pattern, MarshalError> {
-        let sort = kore::Sort::App {
-            id: kore::Id::new("SortBytes".to_string()).unwrap(),
-            args: vec![],
-        };
-        let value = kore::Str(self.0.iter().map(|&b| b as char).collect());
         match name {
-            "VarCALLDATA" => Ok(kore::Pattern::Dv { sort, value }),
-            _ => Err(MarshalError::Unsupported(
-                "Encountered a variable that isn't CALLDATA",
-            )),
+            "VarCALLDATA" => Ok(kore::Pattern::Dv {
+                sort: kore::Sort::App {
+                    id: kore::Id::new("SortBytes".to_owned()).unwrap(),
+                    args: vec![],
+                },
+                value: kore::Str(self.input.iter().map(|&b| b as char).collect()),
+            }),
+            "VarCOVERAGE'Unds'ENABLED" => Ok(kore::Pattern::Dv {
+                sort: kore::Sort::App {
+                    id: kore::Id::new("SortBool".to_owned()).unwrap(),
+                    args: vec![],
+                },
+                value: kore::Str(self.coverage.to_string()),
+            }),
+            _ => Err(MarshalError::UnknownVar(format!(
+                "Encountered unsupported variable: {name}"
+            ))),
         }
     }
 }

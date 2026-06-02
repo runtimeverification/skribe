@@ -52,6 +52,7 @@ fn main() {
     let fuzz_spec_file: String = args.value_from_str("--fuzz-spec").unwrap();
     let contract_name: String = args.value_from_str("--contract-name").unwrap();
     let function_name: String = args.value_from_str("--function-name").unwrap();
+    let coverage: bool = args.contains("--coverage");
     let workspace: String = args
         .value_from_str("--workspace")
         .unwrap_or("./workspace".to_string());
@@ -74,7 +75,11 @@ fn main() {
 
     let coverage_size = get_coverage_size(&template);
 
-    FUZZ_CONFIG.replace(Some(FuzzConfig { template, abi }));
+    FUZZ_CONFIG.replace(Some(FuzzConfig {
+        template,
+        abi,
+        coverage,
+    }));
 
     // Create an observation channel for coverage
     let alloc = vec![0u8; coverage_size].into_boxed_slice();
@@ -167,7 +172,8 @@ fn harness(data: &BytesInput) -> ExitKind {
     // Marshal over to kllvm with the CALLDATA variable substituted
     let mut u = Unstructured::new(data.as_ref());
     let input = config.abi.arbitrary_input(&mut u).unwrap();
-    let sig = SignatureFuzzer(input);
+    let coverage = config.coverage;
+    let sig = SignatureFuzzer { input, coverage };
     marshaller.set_handler(sig);
     let template = &config.template;
     let kllvm_pattern: kllvm::Pattern = marshaller.marshal(template).unwrap();

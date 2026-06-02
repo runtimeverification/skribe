@@ -59,6 +59,7 @@ def _exec_run(
     id: str | None,
     max_examples: int,
     deadline: int | None,
+    coverage_enabled: bool | None,
     fuzz_spec_file: Path | None,
 ) -> None:
     """
@@ -73,6 +74,7 @@ def _exec_run(
         id: Name of the test function to run. If None, runs all tests.
         max_examples: Maximum number of fuzzing examples to run per test.
         deadline: Fuzzer iteration deadline in milliseconds, or ``None`` for no dealine.
+        coverage_enabled: Whether coverage tracking is enabled.
         fuzz_spec_file: Path to fuzzer spec file, or ``None`` for computing the spec on-the-fly.
 
     Returns:
@@ -89,6 +91,7 @@ def _exec_run(
             id=id,
             max_examples=max_examples,
             deadline=deadline,
+            coverage_enabled=coverage_enabled,
             fuzz_spec_file=fuzz_spec_file,
         )
     except InitializationError:
@@ -151,6 +154,14 @@ def _argument_parser() -> ArgumentParser:
         default=None,
         help='Path to fuzzer specification file (default: None).',
     )
+    run_parser.add_argument(
+        '--coverage', dest='coverage', action='store_true', help='Enable coverage tracking (default: disabled).'
+    )
+    run_parser.add_argument(
+        '--no-coverage', dest='coverage', action='store_false', help='Disable coverage tracking (default).'
+    )
+    run_parser.set_defaults(coverage=False)
+
     return parser
 
 
@@ -167,6 +178,7 @@ def main() -> None:
                 id=args.id,
                 max_examples=args.max_examples,
                 deadline=args.deadline,
+                coverage_enabled=args.coverage,
                 fuzz_spec_file=args.fuzz_spec,
             )
         case 'build':
