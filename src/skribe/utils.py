@@ -194,7 +194,8 @@ concrete_definition = SkribeDefinition(kdist.get('stylus-semantics.llvm'))
 
 
 def parse_wasm_file(wasm: Path) -> KInner:
-    return wasm2kast(open(wasm, 'rb'))
+    with wasm.open('rb') as f:
+        return wasm2kast(f)
 
 
 def update_arg(arg_ix: int, f: Callable[[Pattern], Pattern]) -> Callable[[Pattern], Pattern]:
