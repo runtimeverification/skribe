@@ -201,7 +201,6 @@ Computes the `keccak256` hash of the given data.
           1 |-> < i32 > DATA_LEN
           2 |-> < i32 > RESULT_OFFSET
         </locals>
-        <callValue> CALL_VALUE </callValue>
         <k> #endWasm ... </k>
 
     rule [hostCallAux-native-keccak256]:
