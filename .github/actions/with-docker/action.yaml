@@ -30,9 +30,6 @@ runs:
         --interactive                     \
         --tty                             \
         --detach                          \
-        --user root                       \
-        --workdir /home/user              \
         ${TAG}
 
-      docker cp . ${CONTAINER_NAME}:/home/user
-      docker exec ${CONTAINER_NAME} chown -R user:user /home/user
+      docker cp --archive . ${CONTAINER_NAME}:/home/user

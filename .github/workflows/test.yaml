@@ -76,9 +76,9 @@ jobs:
         with:
           container-name: ${CONTAINER}
       - name: 'Build semantics'
-        run: docker exec --user user ${CONTAINER} make kdist-build
+        run: docker exec ${CONTAINER} make kdist-build
       - name: 'Run integration tests'
-        run: docker exec --user user ${CONTAINER} make test-integration
+        run: docker exec ${CONTAINER} make test-integration
       - name: 'Tear down Docker'
         if: always()
         run: docker stop --timeout=0 ${CONTAINER}
