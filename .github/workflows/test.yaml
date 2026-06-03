@@ -82,7 +82,7 @@ jobs:
         run: docker exec --user user ${CONTAINER} make test-integration
       - name: 'Tear down Docker'
         if: always()
-        run: docker stop --time=0 ${CONTAINER}
+        run: docker stop --timeout=0 ${CONTAINER}
 
   nix:
     needs: code-quality-checks
