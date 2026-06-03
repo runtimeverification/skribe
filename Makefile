@@ -22,7 +22,7 @@ kdist: kdist-build
 
 .PHONY: kdist-build
 kdist-build:
-	_JAVA_OPTIONS="-Xmx32g" $(UV_RUN) kdist -v build stylus-semantics.*
+	K_OPTS='-Xmx32g' $(UV_RUN) kdist -v build stylus-semantics.*
 
 .PHONY: kdist-build
 kdist-clean:
