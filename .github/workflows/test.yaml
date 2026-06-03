@@ -70,7 +70,6 @@ jobs:
       - name: 'Check out code'
         uses: actions/checkout@v3
         with:
-          fetch-depth: 0
           submodules: recursive
       - name: 'Set up Docker'
         uses: ./.github/actions/with-docker
@@ -96,8 +95,6 @@ jobs:
     steps:
       - name: 'Check out code'
         uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
       - name: 'Install Nix'
         if: ${{ matrix.runner != 'MacM1' }}
         uses: cachix/install-nix-action@v31.2.0
