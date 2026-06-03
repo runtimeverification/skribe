@@ -83,6 +83,35 @@ jobs:
         if: always()
         run: docker stop --timeout=0 ${CONTAINER}
 
+  fuzzer-tests:
+    needs: code-quality-checks
+    name: 'Fuzzer Tests'
+    runs-on: [self-hosted, linux, normal]
+    env:
+      CONTAINER: skribe-fuzzer-${{ github.sha }}
+    steps:
+      - name: 'Check out code'
+        uses: actions/checkout@v6
+        with:
+          path: skribe
+      - name: 'Check out test contract'
+        uses: actions/checkout@v6
+        with:
+          path: 9lives
+          repository: runtimeverification/skribe_9lives.so
+          ref: a4fa380dd9c50f48dadb96e2dfd2d58f522a481d
+      - name: 'Set up Docker'
+        uses: ./skribe/.github/actions/with-docker
+        with:
+          container-name: ${CONTAINER}
+      - name: 'Build semantics'
+        run: docker exec ${CONTAINER} make -C ./skribe kdist-build
+      - name: 'Run fuzzer tests'
+        run: docker exec ${CONTAINER} ./skribe/.github/workflows/test-fuzzers.sh
+      - name: 'Tear down Docker'
+        if: always()
+        run: docker stop --timeout=0 ${CONTAINER}
+
   nix:
     needs: code-quality-checks
     name: 'Nix Tests'
