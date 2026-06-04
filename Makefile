@@ -22,7 +22,7 @@ kdist: kdist-build
 
 .PHONY: kdist-build
 kdist-build:
-	_JAVA_OPTIONS="-Xmx32g" $(UV_RUN) kdist -v build stylus-semantics.*
+	K_OPTS='-Xmx32g' $(UV_RUN) kdist -v build stylus-semantics.*
 
 .PHONY: kdist-build
 kdist-clean:
@@ -68,8 +68,8 @@ cov-integration: test-integration
 
 # Checks and formatting
 
-format: autoflake isort black
-check: check-flake8 check-mypy check-autoflake check-isort check-black
+format: autoflake isort black cargo-fmt
+check: check-flake8 check-mypy check-autoflake check-isort check-black check-cargo-fmt
 
 .PHONY: check-flake8
 check-flake8:
@@ -91,6 +91,10 @@ check-autoflake:
 isort:
 	$(UV_RUN) isort src
 
+.PHONY: cargo-fmt
+cargo-fmt:
+	cargo fmt --manifest-path ./skribe-fuzz-rs/Cargo.toml
+
 .PHONY: check-isort
 check-isort:
 	$(UV_RUN) isort --check src
@@ -103,6 +107,9 @@ black:
 check-black:
 	$(UV_RUN) black --check src
 
+.PHONY: check-cargo-fmt
+check-cargo-fmt:
+	cargo fmt --manifest-path ./skribe-fuzz-rs/Cargo.toml --check
 
 # Optional tools
 

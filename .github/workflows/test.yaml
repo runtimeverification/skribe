@@ -37,12 +37,10 @@ jobs:
   code-quality-checks:
     needs: version-bump
     name: 'Code Quality Checks'
-    runs-on: [self-hosted, linux, flyweight]
+    runs-on: ubuntu-latest
     steps:
       - name: 'Check out code'
-        uses: actions/checkout@v3
-        with:
-          submodules: recursive
+        uses: actions/checkout@v6
       - name: 'Setup Python 3.10'
         uses: actions/setup-python@v5
         with:
@@ -72,19 +70,47 @@ jobs:
       - name: 'Check out code'
         uses: actions/checkout@v3
         with:
-          fetch-depth: 0
           submodules: recursive
       - name: 'Set up Docker'
         uses: ./.github/actions/with-docker
         with:
           container-name: ${CONTAINER}
       - name: 'Build semantics'
-        run: docker exec --user user ${CONTAINER} make kdist-build
+        run: docker exec ${CONTAINER} make kdist-build
       - name: 'Run integration tests'
-        run: docker exec --user user ${CONTAINER} make test-integration
+        run: docker exec ${CONTAINER} make test-integration
       - name: 'Tear down Docker'
         if: always()
-        run: docker stop --time=0 ${CONTAINER}
+        run: docker stop --timeout=0 ${CONTAINER}
+
+  fuzzer-tests:
+    needs: code-quality-checks
+    name: 'Fuzzer Tests'
+    runs-on: [self-hosted, linux, normal]
+    env:
+      CONTAINER: skribe-fuzzer-${{ github.sha }}
+    steps:
+      - name: 'Check out code'
+        uses: actions/checkout@v6
+        with:
+          path: skribe
+      - name: 'Check out test contract'
+        uses: actions/checkout@v6
+        with:
+          path: 9lives
+          repository: runtimeverification/skribe_9lives.so
+          ref: a4fa380dd9c50f48dadb96e2dfd2d58f522a481d
+      - name: 'Set up Docker'
+        uses: ./skribe/.github/actions/with-docker
+        with:
+          container-name: ${CONTAINER}
+      - name: 'Build semantics'
+        run: docker exec ${CONTAINER} make -C ./skribe kdist-build
+      - name: 'Run fuzzer tests'
+        run: docker exec ${CONTAINER} ./skribe/.github/workflows/test-fuzzers.sh
+      - name: 'Tear down Docker'
+        if: always()
+        run: docker stop --timeout=0 ${CONTAINER}
 
   nix:
     needs: code-quality-checks
@@ -98,8 +124,6 @@ jobs:
     steps:
       - name: 'Check out code'
         uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
       - name: 'Install Nix'
         if: ${{ matrix.runner != 'MacM1' }}
         uses: cachix/install-nix-action@v31.2.0
