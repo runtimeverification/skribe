@@ -55,7 +55,7 @@ jobs:
         uses: cachix/cachix-action@v16
         with:
           name: k-framework-binary
-      - name: 'Build skribe and publish to k-framework and k-framework-binary caches'
+      - name: 'Build and publish skribe'
         uses: workflow/nix-shell-action@v3.4.0
         env:
           GC_DONT_GC: 1
