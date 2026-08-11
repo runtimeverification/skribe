@@ -2,57 +2,84 @@
 module COVERAGE
     imports CONFIGURATION
 
+    syntax CovEntry ::= #covEntry( offset: Int
+                                 , length: Int
+                                 ) [symbol(#covEntry)]
+
+    syntax Coverage ::= #coverage( size   : Int
+                                 , entries: Set
+                                 ) [symbol(#coverage)]
+                      | #addEntry( coverage: Coverage
+                                 , entry   : CovEntry
+                                 ) [function, total, symbol(#addEntry)]
+
+    rule #addEntry(...
+                    coverage: #coverage(... size: SIZE , entries: ENTRIES )
+                  , entry   : ENTRY
+                  )
+      => #coverage(...
+           size   : SIZE
+         , entries: ENTRIES |Set SetItem(ENTRY)
+         )
+
     syntax Map ::= #initCoverage( coverage: Map
                                 , account : Int
                                 , code    : AccountCode
-                                ) [total, function]
-
-    rule #initCoverage(...
-           coverage: COVERAGE
-         , account : _
-         , code    : _:ModuleDecl
-         )
-      => COVERAGE
+                                ) [function, total, symbol(#initCoverage)]
 
     rule #initCoverage(...
            coverage: COVERAGE
          , account : ACCOUNT
          , code    : CODE:Bytes
          )
-      => COVERAGE [ ACCOUNT <- padRightBytes(.Bytes, lengthBytes(CODE), 0) ]
+      => COVERAGE [ ACCOUNT <- #coverage(...
+                                 size: lengthBytes(CODE)
+                               , entries: .Set
+                               )
+                  ]
+
+    rule #initCoverage(...
+           coverage: COVERAGE
+         , account : _
+         , code    : _
+         )
+      => COVERAGE
+      [owise]
 
 
-    syntax Map ::= #updateCoverage( coverage: Map
+    syntax Map ::= #updateCoverage( enabled : Bool
+                                  , coverage: Map
                                   , account : Int
                                   , offset  : Int
                                   , length  : Int
-                                  ) [function]
+                                  ) [function, total, symbol(#updateCoverage)]
 
     rule #updateCoverage(...
-           coverage: COVERAGE
+           enabled : ENABLED
+         , coverage: COVERAGE
          , account : ACCOUNT
          , offset  : OFFSET
          , length  : LENGTH
          )
       => COVERAGE [ ACCOUNT
                     <-
-                    memsetBytes(
-                      { COVERAGE[ACCOUNT] }:>Bytes
-                    , OFFSET
-                    , LENGTH
-                    , -1
+                    #addEntry(...
+                      coverage: { COVERAGE[ACCOUNT] }:>Coverage
+                    , entry   : #covEntry(... offset: OFFSET , length: LENGTH )
                     )
                   ]
-      requires ACCOUNT in_keys(COVERAGE)
+      requires ENABLED
+       andBool ACCOUNT in_keys(COVERAGE)
 
     rule #updateCoverage(...
-           coverage: COVERAGE
-         , account : ACCOUNT
+           enabled : _
+         , coverage: COVERAGE
+         , account : _
          , offset  : _
          , length  : _
          )
       => COVERAGE
-      requires notBool ( ACCOUNT in_keys(COVERAGE) )
+      [owise]
 
 
     /* override in evm-semantics/evm.md
@@ -106,12 +133,14 @@ module COVERAGE
            COVERAGE
            =>
            #updateCoverage(...
-             coverage: COVERAGE
+             enabled : ENABLED
+           , coverage: COVERAGE
            , account : ACCOUNT
            , offset  : PCOUNT
            , length  : #widthOp(OP)
            )
          </coverage>
+         <coverageEnabled> ENABLED </coverageEnabled>
          <stylusvms> .Bag </stylusvms>
       [priority(10)]
 
@@ -127,12 +156,14 @@ module COVERAGE
            COVERAGE
            =>
            #updateCoverage(...
-             coverage: COVERAGE
+             enabled : ENABLED
+           , coverage: COVERAGE
            , account : ACCOUNT
            , offset  : OFFSET
            , length  : LENGTH
            )
          </coverage>
+         <coverageEnabled> ENABLED </coverageEnabled>
          <k> #endWasm ... </k>
       [priority(10)]
 

@@ -30,7 +30,8 @@ module CONFIGURATION
         </stylusvms>
         <foundry/>
         <parsedWasmCache> .Map </parsedWasmCache> // ACCTID:Int |-> WASMMOD:ModuleDecl
-        <coverage> .Map </coverage>               // ACCTID:Int |-> Set[CovSpan]
+        <coverage> .Map </coverage>               // ACCTID:Int |-> Set[Coverage]
+        <coverageEnabled> false </coverageEnabled>
       </stylus>
 
     syntax StylusStack ::= List{StylusStackVal, ":"}  [symbol(stylusStackList)]

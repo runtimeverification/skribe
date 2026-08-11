@@ -2,10 +2,10 @@ from __future__ import annotations
 
 import json
 import sys
-from argparse import ArgumentParser
+from argparse import ArgumentParser, ArgumentTypeError
 from pathlib import Path
 
-from pyk.cli.utils import ensure_dir_path
+from pyk.cli.utils import ensure_dir_path, file_path
 from rich.console import Console
 
 from .skribe import InitializationError, Skribe
@@ -54,7 +54,14 @@ def _exec_export_specs(dir_path: Path | None) -> None:
     exit(0)
 
 
-def _exec_run(dir_path: Path | None, id: str | None, max_examples: int) -> None:
+def _exec_run(
+    dir_path: Path | None,
+    id: str | None,
+    max_examples: int,
+    deadline: int | None,
+    coverage_enabled: bool | None,
+    fuzz_spec_file: Path | None,
+) -> None:
     """
     Executes fuzz tests for the Skribe test contract located at the given path.
 
@@ -62,10 +69,13 @@ def _exec_run(dir_path: Path | None, id: str | None, max_examples: int) -> None:
     Otherwise, all available test functions are fuzzed.
 
     Args:
-        dir_path (Path | None): Path to the Skribe test contract directory.
+        dir_path: Path to the Skribe test contract directory.
                                 If None, defaults to the current working directory.
-        id (str | None): Name of the test function to run. If None, runs all tests.
-        max_examples (int): Maximum number of fuzzing examples to run per test.
+        id: Name of the test function to run. If None, runs all tests.
+        max_examples: Maximum number of fuzzing examples to run per test.
+        deadline: Fuzzer iteration deadline in milliseconds, or ``None`` for no dealine.
+        coverage_enabled: Whether coverage tracking is enabled.
+        fuzz_spec_file: Path to fuzzer spec file, or ``None`` for computing the spec on-the-fly.
 
     Returns:
         None
@@ -77,7 +87,13 @@ def _exec_run(dir_path: Path | None, id: str | None, max_examples: int) -> None:
     skribe = Skribe(concrete_definition, dir_path)
 
     try:
-        failed = skribe.deploy_and_run(id=id, max_examples=max_examples)
+        failed = skribe.deploy_and_run(
+            id=id,
+            max_examples=max_examples,
+            deadline=deadline,
+            coverage_enabled=coverage_enabled,
+            fuzz_spec_file=fuzz_spec_file,
+        )
     except InitializationError:
         err_console.print('[bold red]Initialization failed[/bold red]')
         exit(1)
@@ -94,6 +110,17 @@ def _exec_run(dir_path: Path | None, id: str | None, max_examples: int) -> None:
 
 
 def _argument_parser() -> ArgumentParser:
+    def deadline(s: str) -> int | None:
+        try:
+            n = int(s)
+        except ValueError as err:
+            raise ArgumentTypeError(f'Value is not an integer: {s!r}') from err
+
+        if n < 0:
+            raise ArgumentTypeError(f'Value is not nonnegative: {s!r}')
+
+        return n or None  # handle --deadline=0 as "no deadline"
+
     parser = ArgumentParser(prog='skribe')
     parser.add_argument(
         '--directory',
@@ -115,6 +142,25 @@ def _argument_parser() -> ArgumentParser:
     run_parser.add_argument(
         '--max-examples', type=int, default=100, help='Maximum number of fuzzing inputs to generate (default: 100).'
     )
+    run_parser.add_argument(
+        '--deadline',
+        type=deadline,
+        default=None,
+        help='Fuzzer iteration deadline in milliseconds (default: 0 - no deadline).',
+    )
+    run_parser.add_argument(
+        '--fuzz-spec',
+        type=file_path,
+        default=None,
+        help='Path to fuzzer specification file (default: None).',
+    )
+    run_parser.add_argument(
+        '--coverage', dest='coverage', action='store_true', help='Enable coverage tracking (default: disabled).'
+    )
+    run_parser.add_argument(
+        '--no-coverage', dest='coverage', action='store_false', help='Disable coverage tracking (default).'
+    )
+    run_parser.set_defaults(coverage=False)
 
     return parser
 
@@ -127,7 +173,14 @@ def main() -> None:
 
     match args.command:
         case 'run':
-            _exec_run(dir_path=args.directory, id=args.id, max_examples=args.max_examples)
+            _exec_run(
+                dir_path=args.directory,
+                id=args.id,
+                max_examples=args.max_examples,
+                deadline=args.deadline,
+                coverage_enabled=args.coverage,
+                fuzz_spec_file=args.fuzz_spec,
+            )
         case 'build':
             _exec_build(dir_path=args.directory)
         case 'export-specs':

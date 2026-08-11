@@ -10,6 +10,7 @@ use skribe_fuzz_rs::{
 use std::cell::Cell;
 use std::path::PathBuf;
 use std::ptr;
+use std::time::Duration;
 
 use libafl::{
     Fuzzer, StdFuzzer,
@@ -44,19 +45,6 @@ thread_local! {
 }
 
 fn main() {
-    std::panic::set_hook(Box::new(|info| {
-        eprintln!("{}", info);
-    }));
-
-    let builder = std::thread::Builder::new().stack_size(64 * 1024 * 1024); // 64MB
-    let handler = builder.spawn(actual_main).unwrap();
-
-    if handler.join().is_err() {
-        std::process::exit(1);
-    }
-}
-
-fn actual_main() {
     kllvm::init();
 
     // Parse Arguments
@@ -64,6 +52,7 @@ fn actual_main() {
     let fuzz_spec_file: String = args.value_from_str("--fuzz-spec").unwrap();
     let contract_name: String = args.value_from_str("--contract-name").unwrap();
     let function_name: String = args.value_from_str("--function-name").unwrap();
+    let coverage: bool = args.contains("--coverage");
     let workspace: String = args
         .value_from_str("--workspace")
         .unwrap_or("./workspace".to_string());
@@ -86,7 +75,11 @@ fn actual_main() {
 
     let coverage_size = get_coverage_size(&template);
 
-    FUZZ_CONFIG.replace(Some(FuzzConfig { template, abi }));
+    FUZZ_CONFIG.replace(Some(FuzzConfig {
+        template,
+        abi,
+        coverage,
+    }));
 
     // Create an observation channel for coverage
     let alloc = vec![0u8; coverage_size].into_boxed_slice();
@@ -133,12 +126,13 @@ fn actual_main() {
 
     // The executor which runs the harness
     let mut harness_binding = harness;
-    let mut executor = InProcessExecutor::new(
+    let mut executor = InProcessExecutor::with_timeout(
         &mut harness_binding,
         tuple_list!(observer),
         &mut fuzzer,
         &mut state,
         &mut mgr,
+        Duration::MAX,
     )
     .expect("Failed to create the Executor");
 
@@ -178,7 +172,8 @@ fn harness(data: &BytesInput) -> ExitKind {
     // Marshal over to kllvm with the CALLDATA variable substituted
     let mut u = Unstructured::new(data.as_ref());
     let input = config.abi.arbitrary_input(&mut u).unwrap();
-    let sig = SignatureFuzzer(input);
+    let coverage = config.coverage;
+    let sig = SignatureFuzzer { input, coverage };
     marshaller.set_handler(sig);
     let template = &config.template;
     let kllvm_pattern: kllvm::Pattern = marshaller.marshal(template).unwrap();
@@ -192,10 +187,15 @@ fn harness(data: &BytesInput) -> ExitKind {
 
     // Record coverage for this run
     let signals: &mut [u8] = unsafe { std::slice::from_raw_parts_mut(SIGNALS_PTR, SIGNALS_LEN) };
-    write_coverage_data(&block, signals);
+
+    let kore_text = block.to_string();
+    let mut parser = kore::Parser::new(&kore_text).unwrap();
+    let pattern = parser.pattern().unwrap();
+
+    write_coverage_data(&pattern, signals);
 
     // Check the exit code
-    let exit_code = get_exit_code(&block);
+    let exit_code = get_exit_code(&pattern);
     if exit_code != 0 {
         ExitKind::Crash
     } else {

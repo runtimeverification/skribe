@@ -7,7 +7,7 @@ use libfuzzer_sys::fuzz_target;
 use pico_args::Arguments;
 
 use skribe_fuzz_rs::{
-    FuzzConfig, FuzzSpec, Signature, SignatureAbi, SignatureFuzzer, extract_template_and_signature,
+    FuzzConfig, SignatureAbi, SignatureFuzzer, extract_template_and_signature,
     fuzz_specs_from_json, get_exit_code,
     kllvm::{self, Marshaller},
     kore,
@@ -40,6 +40,7 @@ fuzz_target!( init: {
     let function_name: String = args
         .value_from_str("--function-name")
         .unwrap();
+    let coverage: bool = args.contains("--coverage");
 
     // Parse fuzz spec
     let contents = std::fs::read_to_string(fuzz_spec_file).unwrap();
@@ -51,7 +52,11 @@ fuzz_target!( init: {
 
     let abi = SignatureAbi::from_signature(signature).unwrap();
 
-    FUZZ_CONFIG.replace(Some(FuzzConfig { template, abi }));
+    FUZZ_CONFIG.replace(Some(FuzzConfig {
+        template,
+        abi,
+        coverage,
+    }));
 },
     |data: &[u8]| {
         let mut marshaller_cell: Option<Marshaller<_>> = MARSHALLER.take();
@@ -62,7 +67,8 @@ fuzz_target!( init: {
         // Marshal over to kllvm with the CALLDATA variable substituted
         let mut u = Unstructured::new(data);
         let input = config.abi.arbitrary_input(&mut u).unwrap();
-        let sig = SignatureFuzzer(input);
+        let coverage = config.coverage;
+        let sig = SignatureFuzzer{ input, coverage };
         marshaller.set_handler(sig);
         let template = &config.template;
         let kllvm_pattern: kllvm::Pattern = marshaller.marshal(template).unwrap();
@@ -71,8 +77,12 @@ fuzz_target!( init: {
         let mut block: kllvm::Block = kllvm_pattern.into();
         block.take_steps(-1);
 
+        let kore_text = block.to_string();
+        let mut parser = kore::Parser::new(&kore_text).unwrap();
+        let pattern = parser.pattern().unwrap();
+
         // Check the exit code
-        let exit_code = get_exit_code(&block);
+        let exit_code = get_exit_code(&pattern);
         if exit_code != 0 {
             println!("panic!");
         }
